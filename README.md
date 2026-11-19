@@ -36,11 +36,11 @@ AuroraShop es una tienda en línea (WordPress + WooCommerce) desplegada en conte
 
 | Integrante | Rol | Componente de rúbrica | Acceso exclusivo |
 |---|---|---|---|
-| James Maradiaga | Lead Security Architect · borde e integración | 5. Informe técnico & APA | Cloudflare (zona `ancordss.me.uk`) |
+| James Maradiaga | Security Engineer · borde y operaciones | 4. Implementación de ciberseguridad | Cloudflare (zona `ancordss.me.uk`) |
 | Javier Oliva | Gobierno de activos y riesgo | 1. Análisis de riesgos y activos | — |
 | Josue | Cloud architecture & DevSecOps | 2. Arquitectura Cloud & DevSecOps | — |
 | Horacio | Ciberdefensa y hardening del CMS | 3. Implementación de ciberdefensa | — |
-| Arun | Operaciones de seguridad y mitigación | 4. Implementación de ciberseguridad | — |
+| Arun | Informe técnico e integración | 5. Informe técnico & APA | — |
 
 Todos con acceso a Google Cloud y Claude. **Solo James opera Cloudflare**; los cambios se piden por issue con etiqueta `cloudflare` (SLA 24 h).
 
@@ -68,8 +68,8 @@ infra/                   Terraform + manifiestos Kubernetes (responsable: Josue)
 | 3 DevSecOps | `docs/03-devsecops/` | Josue | pendiente |
 | 4 Ciberdefensa | `docs/04-ciberdefensa/` | Horacio | pendiente |
 | 5 Despliegue y contenedores | `docs/03-devsecops/contenedores-k8s.md` | Josue | pendiente |
-| 6 Operaciones y monitoreo | `docs/05-operaciones/` | Arun / James | pendiente |
-| Informe y dictamen | `docs/06-informe/` | James | pendiente |
+| 6 Operaciones y monitoreo | `docs/05-operaciones/` | James | pendiente |
+| Informe y dictamen | `docs/06-informe/` | Arun | pendiente |
 
 ## Backlog
 

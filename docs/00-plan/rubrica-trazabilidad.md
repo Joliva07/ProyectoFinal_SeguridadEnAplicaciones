@@ -33,7 +33,7 @@ Cada criterio se mapea a un artefacto verificable. El estado se actualiza en cad
 | Casos de abuso | `casos-abuso.md` | Escenarios con pasos, impacto y detección | pendiente |
 | Perímetro del software | `superficie-ataque.md` | Endpoints, puertos, `wp-json`, `xmlrpc`, origen | pendiente |
 
-## Componente 4 — Implementación de ciberseguridad (4 pts) · Arun
+## Componente 4 — Implementación de ciberseguridad (4 pts) · James
 
 | Criterio | Artefacto | Evidencia | Estado |
 |---|---|---|---|
@@ -44,7 +44,7 @@ Cada criterio se mapea a un artefacto verificable. El estado se actualiza en cad
 | Cifrado | `arquitectura-seguridad.md` §5 + `waf-cloudflare.md` §4 | CMEK, TLS 1.3, secretos | pendiente |
 | Tratamiento y heatmap | `heatmap.md` | Decisión aceptar/eliminar/evitar/mitigar/transferir | pendiente |
 
-## Componente 5 — Informe técnico y APA (4 pts) · James
+## Componente 5 — Informe técnico y APA (4 pts) · Arun
 
 | Criterio | Artefacto | Evidencia | Estado |
 |---|---|---|---|
