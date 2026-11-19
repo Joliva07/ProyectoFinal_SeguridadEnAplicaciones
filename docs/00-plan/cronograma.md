@@ -1,12 +1,12 @@
 # Cronograma
 
-Hoy: **19 de noviembre de 2026** · Entrega objetivo: **9 de diciembre de 2026** (confirmar con la cátedra) · Congelamiento documental: **9-dic 23:59**.
+Hoy: **18 de noviembre de 2026** · Entrega objetivo: **9 de diciembre de 2026** (confirmar con la cátedra) · Congelamiento documental: **9-dic 23:59**.
 
 ## Hitos
 
 | Hito | Fecha | Criterio de salida | Dueño |
 |---|---|---|---|
-| G0 · Arranque | 19-nov | Repo con estructura, issues asignadas, accesos GCP y GitHub entregados | James |
+| G0 · Arranque | 18-nov | Repo con estructura, issues asignadas, accesos GCP y GitHub entregados | James |
 | G1 · Entorno vivo | 25-nov | `api.financiaweb.ancordss.me.uk` responde con JWT válido; WAF base y TLS activos; datos sintéticos cargados | Josue + James |
 | G2 · Evaluación | 2-dic | Reportes de pentest, SAST/SCA, IaC y contenedores entregados con IDs `H-NN` | Horacio + Josue |
 | G3 · Ciberdefensa operativa | 7-dic | Reglas WAF aplicadas y probadas; SIEM con alertas disparadas; plan de mitigación completo | Arun + James |
@@ -16,7 +16,7 @@ Hoy: **19 de noviembre de 2026** · Entrega objetivo: **9 de diciembre de 2026**
 
 | Fecha | James | Javier | Josue | Horacio | Arun |
 |---|---|---|---|---|---|
-| 19–20 | Proyecto GCP, APIs, IAM base, WIF, repo e issues | Inventario de activos (borrador) | Diagrama C4 + decisiones de servicios | Setup Android Studio, repo `app/`, primer login PKCE | Plantillas WAF/SIEM, estudiar reglas Cloudflare |
+| 18–20 | Proyecto GCP, APIs, IAM base, WIF, repo e issues | Inventario de activos (borrador) | Diagrama C4 + decisiones de servicios | Setup Android Studio, repo `app/`, primer login PKCE | Plantillas WAF/SIEM, estudiar reglas Cloudflare |
 | 21–22 | DNS Cloudflare (3 hosts), TLS, WAF base, Access en `admin` | CIA + criticidad | Terraform base (VPC, SQL, Artifact Registry) | APK con Keystore + biometría | Consultas BigQuery base |
 | 23–24 | Revisión de arquitectura, presupuesto y alertas | STRIDE | Backend desplegado + pipeline mínimo | Pinning + R8; checklist MASVS | Mapeo OWASP API Top 10 |
 | 25 | **G1**: demo de entorno vivo | DREAD + matriz inicial | Deploy verificado, pipeline en PR | APK firmado de prueba | Spec WAF v1 |

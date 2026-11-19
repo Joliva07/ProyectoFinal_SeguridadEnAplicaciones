@@ -17,7 +17,7 @@ FinanciaWeb es la app de banca en línea usada como caso en las semanas previas 
 | Borde | Cloudflare (DNS, WAF, rate limiting, bot management, Zero Trust) |
 | Nube | Google Cloud — API Gateway/LB, Cloud Armor, Identity Platform, KMS, Secret Manager, Cloud Logging/Monitoring |
 | CI/CD | GitHub Actions — Semgrep, OWASP Dependency-Check/Snyk, Trivy, Checkov/tfsec, gitleaks |
-| Código | GitHub — `Ancordss/financiaweb-security` (privado) |
+| Código | GitHub — `Joliva07/ProyectoFinal_SeguridadEnAplicaciones` (público) |
 | Dominio | `ancordss.me.uk` (zona en Cloudflare) |
 
 ### Subdominios
@@ -66,6 +66,10 @@ app/                     cliente Android + microservicios (responsables: Horacio
 | 5 Despliegue y contenedores | `docs/03-devsecops/iac-hardening.md` | Josue | pendiente |
 | 6 Operaciones y monitoreo | `docs/05-operaciones/` | Arun / James | pendiente |
 | Informe y dictamen | `docs/06-informe/` | James | pendiente |
+
+## Backlog
+
+Las 28 tareas están en **Issues** de GitHub, agrupadas en 3 hitos (Sprint 1 Fundaciones · Sprint 2 Evaluación · Sprint 3 Cierre) y etiquetadas por dueño (`owner/*`), fase (`fase/*`) y tipo (`infra`, `cloudflare`, `pentest`, `ops`, `informe`). El detalle de cada asignación está en [`docs/00-plan/reparto-trabajo.md`](docs/00-plan/reparto-trabajo.md) y el calendario en [`cronograma.md`](docs/00-plan/cronograma.md).
 
 ## Reglas del juego
 
