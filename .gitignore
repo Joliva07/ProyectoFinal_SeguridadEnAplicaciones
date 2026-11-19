@@ -1,0 +1,38 @@
+# Secretos
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+secrets/
+service-account*.json
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+override.tf
+
+# Android / Flutter
+app/**/build/
+app/**/.gradle/
+app/**/local.properties
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Evidencia pesada
+evidencias/**/*.har
+evidencias/**/*.pcap
+evidencias/**/*.mp4
+
+# Sistema
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
