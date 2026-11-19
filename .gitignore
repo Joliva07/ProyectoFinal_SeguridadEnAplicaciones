@@ -17,14 +17,15 @@ service-account*.json
 crash.log
 override.tf
 
-# Android / Flutter
-app/**/build/
-app/**/.gradle/
-app/**/local.properties
-*.apk
-*.aab
-*.ap_
-*.dex
+# WordPress / PHP
+cms/**/vendor/
+wp-config.php
+*.sql
+debug.log
+
+# Docker / K8s
+cms/**/*.tar
+kubeconfig*
 
 # Evidencia pesada
 evidencias/**/*.har

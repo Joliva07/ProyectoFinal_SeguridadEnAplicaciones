@@ -6,66 +6,72 @@ Hoy: **18 de noviembre de 2026** · Entrega objetivo: **9 de diciembre de 2026**
 
 | Hito | Fecha | Criterio de salida | Dueño |
 |---|---|---|---|
-| G0 · Arranque | 18-nov | Repo con estructura, issues asignadas, accesos GCP y GitHub entregados | James |
-| G1 · Entorno vivo | 25-nov | `api.financiaweb.ancordss.me.uk` responde con JWT válido; WAF base y TLS activos; datos sintéticos cargados | Josue + James |
-| G2 · Evaluación | 2-dic | Reportes de pentest, SAST/SCA, IaC y contenedores entregados con IDs `H-NN` | Horacio + Josue |
-| G3 · Ciberdefensa operativa | 7-dic | Reglas WAF aplicadas y probadas; SIEM con alertas disparadas; plan de mitigación completo | Arun + James |
-| G4 · Informe | 9-dic | PDF final APA 7, 20/20 rúbrica mapeada, dictamen y anexos | James |
+| G0 · Arranque | 18-nov | Repo, issues asignadas, accesos y proyecto GCP | James |
+| G1 · Tienda viva | 25-nov | `aurorashop.ancordss.me.uk` sirve catálogo y checkout; WAF y TLS activos; datos cargados | Josue + Horacio |
+| G2 · Evaluación | 2-dic | Reportes de pentest, plugins, SAST/SCA, contenedores e IaC con IDs `H-NN` | Horacio + Josue |
+| G3 · Ciberdefensa operativa | 7-dic | WAF aplicado y probado, SIEM/Falco alertando, plan de mitigación completo | Arun + James |
+| G4 · Informe | 9-dic | PDF final APA 7, rúbrica mapeada, dictamen y anexos | James |
 
-## Semana 1 — Fundaciones (19–25 nov)
+## Semana 1 — Fundaciones (18–25 nov)
 
 | Fecha | James | Javier | Josue | Horacio | Arun |
 |---|---|---|---|---|---|
-| 18–20 | Proyecto GCP, APIs, IAM base, WIF, repo e issues | Inventario de activos (borrador) | Diagrama C4 + decisiones de servicios | Setup Android Studio, repo `app/`, primer login PKCE | Plantillas WAF/SIEM, estudiar reglas Cloudflare |
-| 21–22 | DNS Cloudflare (3 hosts), TLS, WAF base, Access en `admin` | CIA + criticidad | Terraform base (VPC, SQL, Artifact Registry) | APK con Keystore + biometría | Consultas BigQuery base |
-| 23–24 | Revisión de arquitectura, presupuesto y alertas | STRIDE | Backend desplegado + pipeline mínimo | Pinning + R8; checklist MASVS | Mapeo OWASP API Top 10 |
-| 25 | **G1**: demo de entorno vivo | DREAD + matriz inicial | Deploy verificado, pipeline en PR | APK firmado de prueba | Spec WAF v1 |
+| 18–20 | Proyecto GCP, APIs, IAM, WIF, issues | Inventario de activos | Diagrama C4 + decisiones (GKE Autopilot, MySQL, GCS) | Dockerfile base de WP + WooCommerce | Plantillas WAF/SIEM + OWASP Web Top 10 |
+| 21–22 | Cloudflare: 3 hosts, TLS, WAF base, Access | CIA y criticidad | Terraform: VPC, GKE, Cloud SQL, Artifact Registry | `wp-config` desde secretos, `php.ini`, Nginx | Consultas BigQuery base |
+| 23–24 | Revisión de arquitectura, presupuesto | STRIDE | Manifiestos K8s + pipeline mínimo | Roles/capacidades, MFA, plugins fijados | Reglas WAF v1 (WordPress) |
+| 25 | **G1**: demo de tienda viva | DREAD + matriz v1 | Tienda desplegada y pipeline en PR | Checkout de prueba y catálogo cargado | Spec WAF v1 |
 
 ## Semana 2 — Evaluación (26 nov – 2 dic)
 
 | Fecha | James | Javier | Josue | Horacio | Arun |
 |---|---|---|---|---|---|
-| 26–27 | Ventana de pentest, reglas de enfrentamiento, WAF Managed Rules | Precisión de matriz con arquitectura real | SAST/SCA/Trivy/Checkov en CI + correcciones | ZAP baseline + Nmap | Evaluación API Top 10 con ZAP/Postman |
-| 28–29 | Revisión de hallazgos, priorización con DREAD | Dataset y cuentas demo finales | IaC hardening: cierres de hallazgos | Burp manual + pruebas IDOR/BOLA | Triaje de hallazgos SAST/SCA |
-| 30–1 | Cloudflare: rate limiting, bot management, Turnstile | Actualización de matriz con hallazgos | Correcciones de código y redeploy | Manipulación de JWT, bypass MFA, paginación | Alertas SIEM v1 |
-| 2 | **G2**: revisión de evidencia | Matriz v2 | Reportes de pipeline archivados | Informes de pentest completos | Tabla hallazgo→control |
+| 26–27 | Ventana de pentest, reglas de enfrentamiento, CRS en log | Matriz con arquitectura real | SAST/WPScan/SCA/Trivy/Checkov en CI | WPScan + ZAP baseline + Nmap | Verificación OWASP Web Top 10 |
+| 28–29 | Revisión de hallazgos y priorización | Datos y cuentas demo finales | IaC + K8s: cierre de hallazgos (NetworkPolicy, PSA) | Burp manual: IDOR pedidos, nonces, upload, SQLi | Triaje de hallazgos SAST/SCA/WPScan |
+| 30–1 | Cloudflare: rate limit, bot mgmt, Turnstile | Matriz v2 con hallazgos | Trivy fixes y redeploy | Evaluación de plugins/temas + PoC | Alertas SIEM v1 + Falco |
+| 2 | **G2**: revisión de evidencia | Matriz v2 cerrada | Reportes de contenedores y pipeline | Informes de pentest y plugins | Tabla hallazgo→control |
 
 ## Semana 3 — Cierre (3–9 dic)
 
 | Fecha | James | Javier | Josue | Horacio | Arun |
 |---|---|---|---|---|---|
-| 3–4 | WAF: reglas custom + Logpush | Heatmap inicial | Hardening final de contenedores | Casos de abuso + superficie | Dashboards + alertas probadas |
-| 5–6 | Ensamblaje del informe (secciones 1–3) | Tratamiento del riesgo (co-autoría) | Sección 3.6 y 4.5 del informe | Sección 3.1–3.2 y 4.3 | Sección 5 completa + heatmap residual |
+| 3–4 | WAF custom + Logpush | Heatmap inicial | Hardening final de contenedores | Casos de abuso + superficie | Dashboards + alertas probadas |
+| 5–6 | Informe §1–3 | Tratamiento (coautoría) | Informe §3.5–3.7, 4.5–4.7 | Informe §3.1–3.4, 4.3–4.4 | Informe §4.2, 5.1–5.6 + heatmap |
 | 7 | **G3**: verificación de controles | Revisión cruzada de Josue | Revisión cruzada de Javier | Revisión cruzada de Arun | Revisión cruzada de Horacio |
-| 8 | Informe completo + APA + índice + anexos | Lectura final | Lectura final | Lectura final | Lectura final |
-| 9 | **G4**: PDF, empaquetado, entrega | — | — | — | — |
+| 8 | Informe completo + APA + anexos | Lectura final | Lectura final | Lectura final | Lectura final |
+| 9 | **G4**: PDF y entrega | — | — | — | — |
 
 ## Ruta crítica
 
 ```
-GCP+Cloudflare (James, D1-2)
+GCP + Cloudflare (James, D1-2)
         │
         ▼
-Backend+DB (Josue, D3-6) ──► Pipeline (Josue, D6-8)
-        │                         │
-        ▼                         ▼
-APK + pinning (Horacio, D3-8) ──► Pentest (Horacio, D9-14)
-                                  │
-                                  ▼
-                        WAF + SIEM + mitigación (Arun/James, D13-19)
-                                  │
-                                  ▼
-                           Informe final (James, D15-21)
+GKE + MySQL (Josue, D2-5) ──► imagen CMS (Horacio, D1-5)
+        │                          │
+        ▼                          ▼
+   tienda viva (G1, 25-nov) ◄──────┘
+        │
+        ▼
+Pipeline + WPScan/Trivy/Checkov (Josue, D6-8)
+        │
+        ▼
+Pentest + plugins + contenedores (Horacio/Josue, D9-14)
+        │
+        ▼
+WAF + SIEM + Falco + mitigación (Arun/James, D13-19)
+        │
+        ▼
+Informe final (James, D15-21)
 ```
 
-Regla: cualquier tarea que no esté en la ruta crítica puede moverse una semana; las de la ruta no.
+Las tareas fuera de la ruta pueden moverse una semana; las de la ruta no.
 
 ## Presupuesto de tiempo por persona
 
-| Integrante | Horas/semana estimadas | Pico |
+| Integrante | Horas/semana | Pico |
 |---|---|---|
-| James | 10–12 | 8-dic (informe) |
+| James | 10–12 | 8-dic |
 | Javier | 6–8 | 25-nov y 5-dic |
-| Josue | 10–12 | 25-nov (despliegue) |
-| Horacio | 10–12 | 30-nov (pentest) |
-| Arun | 7–9 | 6-dic (SIEM + matriz) |
+| Josue | 11–13 | 25-nov (despliegue) |
+| Horacio | 11–13 | 29-nov (pentest) |
+| Arun | 7–9 | 6-dic |

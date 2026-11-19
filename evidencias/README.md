@@ -7,9 +7,9 @@ Cada carpeta corresponde a una fase del ciclo y a una fecha de ejecución. Sin e
 ```
 evidencias/
   fase1/   inventario exportado, matrices en CSV, heatmap
-  fase2/   diagramas exportados, matriz IAM, `terraform plan` redactado
-  fase3/   semgrep/, dependency-check/, gitleaks/, trivy/, checkov/, actions/
-  fase4/   zap-<fecha>/, nmap/, burp/, idor-poc/, apk-analysis/
+  fase2/   diagramas, matriz IAM/RBAC, `terraform plan` y `kubectl get` redactados
+  fase3/   semgrep/, wpscan/, composer-audit/, gitleaks/, trivy/, checkov/, actions/
+  fase4/   zap-<fecha>/, wpscan/, nmap/, burp/, idor-orders/, k8s-tests/
   fase5/   waf-<fecha>/, siem/, alertas/, dashboards/
   fase6/   ... (si aplica)
 ```

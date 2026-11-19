@@ -4,119 +4,113 @@ Dueño: **Josue** · Revisión: James · Componente de rúbrica 2
 
 ## 1. Principios
 
-1. **Zero Trust:** ninguna petición llega a un servicio sin identidad verificada y autorización por recurso; la red no otorga confianza.
-2. **Borde primero:** todo el tráfico entra por Cloudflare → GCP LB. El origen no es alcanzable directamente.
-3. **Un solo camino de despliegue:** pipeline con WIF; sin credenciales estáticas, sin cambios manuales en `demo`.
+1. **Zero Trust:** ninguna petición llega a un pod sin identidad verificada y autorización por recurso; la red no otorga confianza.
+2. **Borde primero:** todo el tráfico entra por Cloudflare → GKE Ingress. El origen no es alcanzable directamente.
+3. **Inmutabilidad:** contenedor sin escritura, cambios solo por imagen y por pipeline; sin editor de plugins en producción.
 4. **Datos cifrados por defecto:** TLS 1.3 en tránsito, CMEK en reposo, secretos solo en Secret Manager.
-5. **Menor privilegio verificable:** cada identidad tiene su rol mínimo y su justificación escrita.
+5. **Menor privilegio verificable:** RBAC de K8s, IAM de GCP y roles de WordPress con justificación escrita.
 
 ## 2. Diagrama
 
 ```mermaid
 flowchart TB
-    subgraph DEV["Cliente"]
-        APK["APK Android<br/>Keystore · biometría · pinning"]
-        WEB["Portal web<br/>Turnstile"]
+    subgraph USER["Cliente"]
+        BR["Navegador<br/>storefront + checkout"]
+        ADM["Administrador<br/>Access + MFA"]
     end
 
-    subgraph EDGE["Cloudflare · perímetro"]
+    subgraph CF["Cloudflare · perímetro"]
         DNS["DNS + TLS 1.3 + HSTS"]
-        WAF["WAF · Managed + custom<br/>rate limiting · bot mgmt"]
-        ACCESS["Cloudflare Access<br/>(solo admin)"]
+        WAF["WAF · CRS + reglas WP<br/>rate limit · bot mgmt"]
+        ACC["Cloudflare Access<br/>(admin, staging)"]
         LP["Logpush"]
     end
 
-    subgraph GCP["Google Cloud · financiaweb-sec-umg"]
-        LB["HTTPS LB + Cloud Armor"]
-        APIGW["API Gateway<br/>validación JWT / cuotas"]
-        IDP["Identity Platform<br/>OIDC · MFA"]
-        RUN1["Cloud Run · accounts"]
-        RUN2["Cloud Run · transfers"]
-        SQL[("Cloud SQL PostgreSQL<br/>IP privada · CMEK")]
-        SM["Secret Manager"]
+    subgraph GCP["Google Cloud · aurorashop-sec-umg"]
+        LB["LB / Ingress-GCE<br/>+ Cloud Armor"]
+        NP["NetworkPolicy<br/>deny-all + allow DB/GCS"]
+        subgraph GKE["GKE Autopilot · namespace aurorashop"]
+            NGX["Nginx<br/>read-only FS"]
+            PHP["PHP-FPM 8.3<br/>non-root · seccomp"]
+            WP["WordPress + WooCommerce<br/>plugins fijados"]
+        end
+        SQL[("Cloud SQL MySQL<br/>IP privada · CMEK")]
+        GCS[("GCS media<br/>privado")]
+        SM["Secret Manager<br/>CSI driver"]
         KMS["Cloud KMS"]
         LOG["Cloud Logging / Monitoring"]
         BQ[("BigQuery<br/>SIEM")]
         AR["Artifact Registry"]
+        FALCO["Falco<br/>runtime security"]
     end
 
-    CI["GitHub Actions<br/>SAST · SCA · Trivy · Checkov"]
+    CI["GitHub Actions<br/>gitleaks · Semgrep · WPScan · Trivy · Checkov"]
 
-    APK -->|"HTTPS + pinning"| DNS
-    WEB --> WAF
-    DNS --> WAF
-    WAF --> ACCESS
-    WAF --> LB
-    ACCESS --> LB
-    LB --> APIGW
-    APIGW --> RUN1
-    APIGW --> RUN2
-    APK -.->|"OAuth2 + PKCE"| IDP
-    RUN1 --> IDP
-    RUN2 --> IDP
-    RUN1 --> SQL
-    RUN2 --> SQL
-    RUN1 --> SM
-    RUN2 --> SM
+    BR --> DNS --> WAF --> LB
+    ADM --> ACC --> LB
+    LB --> NGX --> PHP --> WP
+    WP --> SQL
+    WP --> GCS
+    WP --> SM
     SQL --- KMS
-    RUN1 --> LOG
-    RUN2 --> LOG
+    WP --> LOG
+    NGX --> LOG
+    FALCO --> LOG
     LB --> LOG
     LOG --> BQ
     LP --> BQ
-    CI -->|"WIF · deploy"| RUN1
-    CI -->|"imágenes firmadas"| AR
-    AR --> RUN1
-    AR --> RUN2
+    CI -->|"WIF · deploy"| GKE
+    CI -->|"imagen"| AR
+    AR --> GKE
+    NP -.-> PHP
 ```
 
-## 3. Flujo de una operación crítica (transferencia)
+## 3. Flujo de un checkout
 
-1. El APK obtiene un token OIDC (Authorization Code + PKCE) de Identity Platform; el token se guarda en Keystore.
-2. La app llama `POST https://api.financiaweb.ancordss.me.uk/v1/transfers` con `Authorization: Bearer`.
-3. Cloudflare valida TLS, aplica WAF y rate limiting, registra en Logpush.
-4. El LB aplica Cloud Armor y entrega a API Gateway, que valida firma, `iss`, `aud`, `exp` y scopes.
-5. `transfers` revalida el token, verifica que la cuenta origen pertenezca al `sub`, valida monto y beneficiario, y ejecuta la transacción en una transacción SQL con bloqueo.
-6. Se escribe un registro de auditoría inmutable (quién, qué, cuándo, desde dónde, resultado) que llega a BigQuery.
-7. La respuesta no expone identificadores internos ni trazas.
+1. El navegador entra por `aurorashop.ancordss.me.uk`; Cloudflare aplica TLS, WAF, rate limit y bot management, y registra en Logpush.
+2. El LB aplica Cloud Armor y entrega al Ingress; NetworkPolicy limita el tráfico del pod a MySQL, GCS y DNS.
+3. Nginx sirve estáticos y pasa PHP-FPM; WordPress valida nonce y sesión; WooCommerce calcula el total en servidor (nunca confía en el precio del cliente).
+4. La creación del pedido usa una transacción SQL; el cupón se revalida dentro de la transacción para evitar doble uso.
+5. El pago se delega a la pasarela sandbox; el webhook se valida por firma y se deduplica por `event_id`.
+6. Se registra auditoría (quién, qué pedido, monto, IP, resultado) que llega a BigQuery; la respuesta no expone trazas.
 
-## 4. IAM de menor privilegio
+## 4. IAM, RBAC y menor privilegio
 
 | Identidad | Rol(es) | Alcance | Justificación |
 |---|---|---|---|
-| `sa-run-accounts` | `roles/cloudsql.client`, `roles/secretmanager.secretAccessor` (secretos `accounts-*`) | Servicio `accounts` | Solo necesita BD y sus secretos |
-| `sa-run-transfers` | `roles/cloudsql.client`, `roles/secretmanager.secretAccessor` (secretos `transfers-*`) | Servicio `transfers` | Aislamiento entre servicios |
-| `sa-gh-deployer` | `roles/run.admin`, `roles/artifactregistry.writer`, `roles/iam.serviceAccountUser` | Proyecto, con condición de repo/rama en WIF | Despliegue automatizado |
-| `sa-sql-backup` | `roles/cloudsql.viewer`, `roles/storage.objectCreator` | Bucket de backups | Respaldo sin acceso a datos en caliente |
-| Humans (Javier, Josue, Horacio, Arun) | `roles/viewer` + roles de lectura específicos | Proyecto | Auditoría sin capacidad de cambio |
+| `sa-gke-workload` (Workload Identity) | `roles/cloudsql.client`, `roles/storage.objectViewer` (media), `roles/secretmanager.secretAccessor` (`aurorashop-*`) | Namespace `aurorashop` | Solo lo que el CMS necesita |
+| `sa-gh-deployer` | `roles/container.developer`, `roles/artifactregistry.writer`, `roles/iam.serviceAccountUser` | Proyecto, WIF condicionado a repo/rama | Despliegue automatizado |
+| `sa-backup` | `roles/cloudsql.viewer`, `roles/storage.objectCreator` | Bucket de backups | Respaldo sin leer datos en caliente |
+| RBAC K8s: `aurorashop-app` | `get/list/watch` en ConfigMap/Secret del namespace | Namespace | Sin acceso a otros namespaces ni a la API de administración |
+| RBAC K8s: `aurorashop-deployer` (CI) | `edit` en el namespace | Namespace | Despliegue acotado |
+| Humanos (Javier, Josue, Horacio, Arun) | `roles/viewer` + lectura específica | Proyecto | Auditoría sin capacidad de cambio |
 | James | break-glass | Proyecto | Único operador manual |
 
-Prohibido: `roles/owner` o `roles/editor` para cuentas de servicio, claves JSON, cuentas de servicio con roles a nivel organización.
+Prohibido: `roles/owner` o `roles/editor` para cuentas de servicio, tokens de SA montados por defecto, `cluster-admin` para CI, `hostPath`, `privileged: true`, `hostNetwork`.
 
 ## 5. Cifrado
 
 | Capa | Mecanismo | Detalle |
 |---|---|---|
-| Tránsito externo | TLS 1.3 (mínimo 1.2), HSTS, cifrados modernos | Certificado de Cloudflare; Origin CA hacia GCP |
-| Tránsito interno | TLS entre LB → servicios; IP privada para SQL | Sin tráfico en claro dentro de la VPC |
-| Reposo en BD | AES-256 con CMEK en Cloud KMS | Rotación automática 90 días; clave separada por ambiente |
-| Reposo en objetos | Cifrado por defecto + CMEK en buckets críticos | Uniform access, versionado, retención |
-| Secretos | Secret Manager con CMEK, versiones y auditoría | Sin secretos en variables de entorno persistentes |
-| Dispositivo móvil | Android Keystore + EncryptedSharedPreferences | Token de refresh cifrado; sin datos sensibles en logs |
-| Respaldos | Snapshots cifrados con CMEK separada | Prueba de restauración documentada |
+| Tránsito externo | TLS 1.3 (mín. 1.2), HSTS, cifrados modernos | Cloudflare Edge + Origin CA |
+| Tránsito interno | Cloud SQL por IP privada; GCS por HTTPS | Sin tráfico en claro en la VPC |
+| Reposo BD | AES-256 con CMEK | Rotación 90 días; clave por ambiente |
+| Reposo objetos | Cifrado por defecto + CMEK en media/backups | Uniform access, versionado, retención |
+| Secretos | Secret Manager + CSI driver, CMEK | Sin secretos en env persistentes ni en el repo |
+| Backups | Snapshots cifrados con CMEK separada | Restore probado y documentado |
 
-## 6. Controles por capa (las 7)
+## 6. Controles por capa (7)
 
-| Capa | Controles implementados | Evidencia |
+| Capa | Controles | Evidencia |
 |---|---|---|
-| 1 Datos | CMEK, TLS 1.3, Keystore, Argon2id, enmascaramiento de logs | Terraform, capturas, `openssl s_client` |
-| 2a Código | Semgrep, revisión, consultas parametrizadas, validación de esquema | Reportes en `evidencias/fase3/` |
-| 2b Aplicación | OAuth2 + PKCE, MFA, autorización por recurso, rotación de refresh | Pruebas de Horacio |
-| 2c Implementación | Dependency-Check/Snyk, pin de versiones, lockfiles | Reportes SCA |
-| 2d Perímetro de aplicación | API Gateway con JWT, esquema OpenAPI, cuotas, CORS cerrado | Config y pruebas |
-| 3 Host | Imágenes distroless, Trivy, sin shell, usuario no root, parches | Reporte Trivy |
-| 4 Red interna | VPC, subred privada, firewall rules restrictivas, conector serverless | `terraform plan`, Checkov |
-| 5 Perímetro cloud | Cloudflare WAF, Cloud Armor, rate limit, bot mgmt, DDoS | Capturas y reglas |
+| 1 Datos | CMEK, TLS 1.3, Secret Manager, backups cifrados | Terraform, `openssl s_client` |
+| 2a Código | Semgrep, revisión, `$wpdb->prepare`, escape en salida | Reportes fase 3 |
+| 2b Aplicación | Roles/capacidades, nonces, MFA, autorización por pedido | Pruebas de Horacio |
+| 2c Implementación | WPScan, composer/npm audit, plugins fijados por versión | Reportes SCA |
+| 2d Perímetro de aplicación | WAF, rate limit, XML-RPC cerrado, uploads sin ejecución | Capturas WAF |
+| 3 Host | Imagen distroless/mínima, non-root, read-only, PSA `restricted`, Trivy | `kubectl get`, Trivy |
+| 4 Red interna | VPC, subred privada, NetworkPolicy, RBAC, GKE privado | Manifiestos, `kubectl auth can-i` |
+| 5 Perímetro cloud | Cloudflare WAF, Cloud Armor, bot mgmt, Access | Reglas y pruebas |
 | 6 Física | SLA y certificaciones del proveedor (ISO 27001/SOC 2) | Referencias documentales |
 | 7 Políticas | SECURITY.md, reglas de enfrentamiento, revisión cruzada, IAM documentado | Repo + este documento |
 
@@ -124,16 +118,16 @@ Prohibido: `roles/owner` o `roles/editor` para cuentas de servicio, claves JSON,
 
 | Decisión | Alternativa descartada | Motivo |
 |---|---|---|
-| Cloudflare delante de GCP LB | Exponer Cloud Run directamente | Necesitamos WAF, bot mgmt y Zero Trust sin costo |
-| API Gateway para validar JWT | Validar solo en cada servicio | Defensa en profundidad y cuotas centralizadas |
-| Cloud Run | GKE | Menos superficie que hardening de clúster; el curso evalúa contenedores igual con Trivy |
-| Workload Identity Federation | Claves JSON de SA | Elimina el secreto de larga vida |
-| Identity Platform | Auth0 free | Ya está en GCP y permite MFA y OIDC sin costo inicial |
-| Pinning de CA intermedia + backup pin | Pinning de hoja | Cloudflare rota certificados; la hoja rompería la app |
+| GKE Autopilot | Cloud Run | WordPress necesita FS persistente y procesos PHP; Autopilot reduce administración de nodos y aplica PSA por defecto |
+| MySQL administrado | MySQL en pod | Backups, CMEK y parches sin operar la BD |
+| Cloudflare delante del LB | Exponer el Ingress | WAF, bot mgmt, Access y Logpush sin costo adicional |
+| Bucket GCS + Cloudflare CDN | Plugin de CDN con credenciales | Menos secretos en la app y control de acceso por IAM |
+| Cloudflare Access para `wp-admin` | Solo 2FA de WordPress | Segunda barrera antes de tocar la aplicación |
+| Imagen propia multi-stage | Imagen oficial `wordpress` | Elimina herramientas de build, fija versiones y permite `read-only` |
 
 ## 8. Pendientes de decisión
 
-- [ ] ¿Cloudflare Authenticated Origin Pull (mTLS) o restricción por rangos IP en el LB? (James + Josue, 24-nov)
-- [ ] Tamaño de Cloud SQL y política de conexiones (pooling en el servicio).
-- [ ] Si Identity Platform exige dominio verificado, usar la opción de dominio propio en Cloudflare.
-- [ ] Retención de logs: 30 días en Logging, 90 en BigQuery (costo).
+- [ ] ¿Cloudflare Authenticated Origin Pull o restricción por rangos de Cloudflare en el LB? (James + Josue, 24-nov)
+- [ ] Estrategia de media: subida directa a GCS con URL firmada o volumen persistente + sync.
+- [ ] Tamaño de Cloud SQL y pooling (Proxy o conector) para 4 pods PHP.
+- [ ] Retención: 30 días en Logging, 90 en BigQuery (costo).

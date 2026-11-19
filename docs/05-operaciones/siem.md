@@ -1,73 +1,78 @@
 # SIEM y correlación de eventos
 
-Dueño: **Arun** · Componente de rúbrica 4 · Alcance: gratuito (Cloud Logging + BigQuery + Cloud Monitoring)
+Dueño: **Arun** · Componente de rúbrica 4 · Stack gratuito: Cloud Logging + BigQuery + Cloud Monitoring
 
 ## 1. Arquitectura de recolección
 
 ```mermaid
 flowchart LR
-    CF["Cloudflare<br/>L7 HTTP logs"] -->|Logpush| GCS["GCS<br/>fw-logs-archive"]
-    LB["GCP LB / Cloud Armor"] --> LOG["Cloud Logging"]
-    RUN["Cloud Run<br/>logs estructurados"] --> LOG
-    IDP["Identity Platform<br/>audit logs"] --> LOG
-    IAM["Cloud Audit Logs<br/>admin activity"] --> LOG
+    CF["Cloudflare<br/>HTTP logs"] -->|Logpush| GCS["GCS<br/>logs-archive"]
+    LB["Ingress / Cloud Armor"] --> LOG["Cloud Logging"]
+    APP["Pods: Nginx + PHP<br/>logs estructurados"] --> LOG
+    AUD["GKE audit + Cloud Audit"] --> LOG
+    SQL["Cloud SQL logs"] --> LOG
+    FALCO["Falco"] --> LOG
     GCS --> BQ[("BigQuery<br/>dataset siem")]
     LOG -->|sink| BQ
-    BQ --> LOOK["Consultas de correlación"]
-    LOOK --> ALERT["Cloud Monitoring<br/>alert policies"]
+    BQ --> Q["Consultas de correlación"]
+    Q --> ALERT["Cloud Monitoring<br/>alert policies"]
     ALERT --> MAIL["Correo del grupo"]
-    BQ --> DASH["Dashboard Looker Studio"]
+    BQ --> DASH["Looker Studio"]
 ```
 
 ## 2. Fuentes y retención
 
-| Fuente | Destino | Retención | Qué aporta |
+| Fuente | Destino | Retención | Aporta |
 |---|---|---|---|
-| Cloudflare Logpush (HTTP requests) | GCS → BigQuery | 90 días | IP, país, regla WAF, acción |
-| Cloud Run stdout (JSON) | Cloud Logging → sink | 30 días + 90 en BQ | `sub`, ruta, status, latencia |
-| Identity Platform | Cloud Logging | 30 días | logins, MFA, fallos |
-| Cloud Audit Logs (admin activity) | sink a BQ | 90 días | cambios de IAM, recursos |
-| Cloud Armor | Cloud Logging | 30 días | bloqueos de segunda capa |
-| GitHub Actions audit | exportación manual | repo | cambios de workflow |
+| Cloudflare Logpush | GCS → BigQuery | 90 días | IP, país, regla WAF, acción, bot score |
+| Nginx/PHP (pods) | Cloud Logging → sink | 30 días + 90 en BQ | ruta, usuario, status, latencia, `request_id` |
+| WooCommerce (auditoría) | Cloud Logging | 30 días | pedidos, cupones, exportaciones, autor |
+| Cloud Audit Logs (admin) | sink a BQ | 90 días | IAM, `exec`, cambios de recursos |
+| GKE audit | Cloud Logging | 30 días | RBAC, API, admissions |
+| Cloud SQL | Cloud Logging | 30 días | errores, conexiones, auditoría |
+| Falco | Cloud Logging | 30 días | procesos, escrituras, anomalías |
+| GitHub Actions | artifact | repo | cambios de workflow y despliegues |
 
-## 3. Consultas de correlación (ejecutables en BigQuery)
+## 3. Consultas de correlación
 
-1. **Fuerza bruta:** `SELECT ip, COUNT(*) FROM siem.cf_http WHERE uri LIKE '/v1/auth/%' AND status IN (401,403) GROUP BY ip HAVING COUNT(*) > 20 ORDER BY 2 DESC`.
-2. **IDOR:** agrupar 403 por `sub` y `account_id_hash` en 10 minutos.
-3. **Paginación abusiva:** contar peticiones a `movements` por `sub` con `offset > 1000`.
-4. **Bypass de WAF:** peticiones que llegan al origen con payload sospechoso (comparar `cf.waf.action` = allow y `uri` con patrones SQLi).
-5. **Cambio de IAM:** `protoPayload.methodName = "SetIamPolicy"` fuera de la ventana de despliegue.
-6. **Token sin MFA:** eventos con `amr` sin `mfa` en rutas de transferencia.
-7. **Volumen de egreso:** transferencias por `sub` por hora vs. promedio del mismo usuario.
+1. **Fuerza bruta:** fallos por IP en `/wp-login.php` en 5 min > 20.
+2. **Exploit de plugin:** 404/403 concentrados en rutas de un plugin específico + payload en query.
+3. **IDOR:** 403 por `user_id` con `order_id` distinto en 10 min.
+4. **Card testing:** pedidos fallidos por IP > 10/hora con montos < 5.
+5. **Bypass de WAF:** peticiones al pod con `cf.waf.action = allow` y payload sospechoso.
+6. **Cambio de IAM/RBAC:** `SetIamPolicy` o `create rolebinding` fuera de ventana de despliegue.
+7. **Integridad:** hash de archivos del CMS ≠ baseline desplegado.
+8. **Egreso anómalo:** peticiones del pod a dominios no permitidos.
 
-Cada consulta se guarda en `evidencias/fase5/siem/` con su resultado y fecha.
+Cada consulta se guarda en `evidencias/fase5/siem/` con resultado y fecha.
 
 ## 4. Alertas
 
 | ID | Nombre | Condición | Severidad | Destino |
 |---|---|---|---|---|
-| AL-01 | Fuerza bruta sostenida | > 20 fallos/min por IP | alta | correo |
-| AL-02 | Acceso a objeto ajeno | > 5 × 403 por `sub` en 10 min | crítica | correo + issue |
-| AL-03 | Token sin MFA en transferencia | ≥ 1 evento | crítica | correo |
-| AL-04 | Cambio de IAM | cualquier `SetIamPolicy` | alta | correo |
-| AL-05 | Pico de 5xx | > 5% en 5 min | media | correo |
-| AL-06 | Exportación masiva | > 2/hora por usuario | alta | correo |
-| AL-07 | Origen accedido sin Cloudflare | petición al `*.run.app` con 200 | crítica | correo |
+| AL-01 | Fuerza bruta | > 20 fallos/min por IP | alta | correo |
+| AL-02 | Acceso a pedido ajeno | > 5 × 403 por usuario en 10 min | crítica | correo + issue |
+| AL-03 | Card testing | > 10 pedidos fallidos/hora por IP | alta | correo |
+| AL-04 | Shell en pod | evento Falco RT-01 | crítica | correo + on-call |
+| AL-05 | Cambio de archivos del CMS | RT-03/RT-04 | crítica | correo |
+| AL-06 | Cambio de IAM/RBAC | cualquier `SetIamPolicy` o rolebinding | alta | correo |
+| AL-07 | Origen accedido sin Cloudflare | petición al LB sin Host válido con 200 | crítica | correo |
+| AL-08 | Error 5xx | > 5% en 5 min | media | correo |
 
 ## 5. Dashboard mínimo
 
-- Peticiones totales vs. bloqueadas por WAF (por regla).
-- Top IP/país/ASN por bloqueos.
-- Logins exitosos vs. fallidos; MFA challenge rate.
-- 4xx/5xx por endpoint.
-- Transferencias por hora y monto total.
-- Eventos de auditoría IAM y despliegues.
+- Peticiones vs. bloqueos WAF por regla; top IP/país/ASN.
+- Logins exitosos/fallidos y challenges MFA.
+- Pedidos por hora, tasa de fallo y monto total.
+- 403 por endpoint REST; 404 por ruta de plugin.
+- Eventos de auditoría (IAM, `exec`, despliegues).
+- Estado de pods, reinicios y HPA.
 
 ## 6. Prueba de detección (obligatoria)
 
-Para cada alerta crítica se ejecuta una prueba controlada dentro de la ventana de pentest y se registra: hora del evento, hora de la alerta, diferencia y captura. La latencia objetivo es < 2 minutos. Una alerta que nunca se probó se reporta como "no verificada".
+Cada alerta crítica se dispara en prueba controlada dentro de la ventana y se registra: hora del evento, hora de la alerta, diferencia y captura. Objetivo < 2 minutos. Una alerta no probada se reporta como "no verificada".
 
 ## 7. Limitaciones
 
-- Sin retención de largo plazo ni correlación multi-fuente avanzada (no hay licencia de Chronicle/Splunk): se declara como arquitectura de referencia y se muestra el equivalente gratuito.
-- El envío de correo puede tener retraso; para el curso se acepta y se documenta.
+- Sin retención de largo plazo ni correlación multi-fuente avanzada (sin Chronicle/Splunk): se muestra el equivalente gratuito y se declara como arquitectura de referencia.
+- El correo puede tener retraso; se acepta para el curso y se documenta.

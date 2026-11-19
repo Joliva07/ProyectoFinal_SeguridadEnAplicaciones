@@ -2,88 +2,89 @@
 
 Dueño: **Horacio** · Insumo: `docs/01-activos-riesgos/stride.md`
 
-## 1. Formato de cada caso
+## 1. Formato
 
 ```
 AC-NN · <título>
-Actor: <externo | autenticado | con rol bajo | insider | cadena de suministro>
-Precondición: <qué necesita saber o tener>
+Actor: <externo | cliente | editor | shop_manager | insider | cadena de suministro>
+Precondición:
 Objetivo: <activo A-NN>
 Pasos: 1..n
-Impacto: <confidencialidad/integridad/disponibilidad + negocio>
-Detección esperada: <log, alerta, regla WAF>
-Control: <preventivo> / <detectivo>
+Impacto:
+Detección esperada:
+Control: preventivo / detectivo
 Evidencia: <H-NN o captura>
 ```
 
 ## 2. Casos obligatorios
 
-### AC-01 · Enumeración y exfiltración por paginación (API4/API6)
-- **Actor:** cliente autenticado con cuenta demo.
-- **Precondición:** token válido; endpoint de movimientos.
-- **Pasos:** 1) consultar `/v1/accounts/{id}/movements?limit=50&offset=0`; 2) automatizar incremento de `offset`; 3) variar `account_id` con IDs predecibles.
-- **Impacto:** exfiltración masiva de historial; incumplimiento de secreto bancario.
-- **Detección:** tasa anómala por `sub`, 200s masivos, correlación en BigQuery.
-- **Control:** tope de `limit`, IDs opacos (UUID), autorización por objeto, rate limit, alerta.
+### AC-01 · Card testing en checkout
+- **Actor:** externo con bots.
+- **Precondición:** checkout sin captcha ni límite.
+- **Pasos:** 1) automatizar checkout con montos mínimos; 2) variar correo y tarjeta; 3) observar respuestas de la pasarela.
+- **Impacto:** comisiones, bloqueo de la cuenta de la pasarela, reputación.
+- **Detección:** tasa de pedidos fallidos por IP/ASN; alerta AL-03.
+- **Control:** Turnstile, rate limit 5/min en checkout, 3DS sandbox, alerta.
 
-### AC-02 · Fuerza bruta y credential stuffing en login
+### AC-02 · Fuerza bruta y XML-RPC amplificado
 - **Actor:** externo.
-- **Pasos:** 1) lista de usuarios filtrada; 2) 5 req/s contra `/auth/login`; 3) observar códigos y tiempos.
-- **Impacto:** toma de cuentas.
-- **Detección:** 429 por Cloudflare, alerta de fallos por IP/ASN.
-- **Control:** rate limit, MFA, bloqueo progresivo, Turnstile en web.
+- **Pasos:** 1) enumerar usuarios (`?author=1`); 2) `wp-login` a 5 req/s; 3) usar `system.multicall` en `xmlrpc.php` para multiplicar intentos.
+- **Impacto:** toma de cuentas; degradación del servicio.
+- **Detección:** 429, picos de 401/403, alerta AL-01.
+- **Control:** WAF (xmlrpc bloqueado), rate limit, 2FA, bloqueo progresivo.
 
-### AC-03 · Bypass de MFA por flujo incompleto
-- **Actor:** atacante con contraseña válida.
-- **Pasos:** 1) completar paso 1; 2) reutilizar el token parcial contra endpoints de negocio; 3) intentar `scope` elevado.
-- **Impacto:** acceso sin segundo factor.
-- **Detección:** token con `amr=password` usado en endpoints que exigen MFA.
-- **Control:** scopes separados + verificación de `acr`/`amr` en el servicio.
+### AC-03 · Explotación de plugin vulnerable
+- **Actor:** externo.
+- **Precondición:** plugin con CVE pública sin actualizar.
+- **Pasos:** 1) identificar versión; 2) enviar payload del CVE (SQLi/RCE/upload); 3) obtener dato o ejecución.
+- **Impacto:** exfiltración total o RCE en el pod.
+- **Detección:** WAF (firma de exploit), Falco (proceso inesperado), integridad de archivos.
+- **Control:** plugins fijados, WPScan en CI, WAF, Falco, PSA/NetworkPolicy como contención.
 
-### AC-04 · Transferencia fraudulenta con IDOR/BOLA
+### AC-04 · Pedido ajeno por IDOR
 - **Actor:** cliente autenticado.
-- **Pasos:** 1) obtener `account_id` ajeno (IDOR); 2) `POST /v1/transfers` con origen ajeno; 3) monto mínimo para no disparar límites.
-- **Impacto:** pérdida financiera directa.
-- **Detección:** origen ≠ `sub`, alerta de transferencia con cuenta no vinculada.
-- **Control:** autorización por recurso + auditoría + límites.
+- **Pasos:** 1) crear pedido propio; 2) cambiar el ID en REST o enlace de cuenta; 3) leer o descargar factura.
+- **Impacto:** fuga de PII y direcciones; fraude.
+- **Detección:** 403 repetidos por usuario; alerta AL-02.
+- **Control:** comprobación de propiedad + tests de regresión.
 
-### AC-05 · Robo de sesión desde el dispositivo
-- **Actor:** malware local / dispositivo rooteado.
-- **Pasos:** 1) leer almacenamiento de la app; 2) extraer refresh token; 3) usarlo desde otra IP.
-- **Impacto:** suplantación persistente.
-- **Detección:** refresh desde IP/dispositivo distinto; binding de dispositivo.
-- **Control:** Keystore, rotación de refresh, detección de root, revocación por anomalía.
+### AC-05 · Shell subido vía media/editor
+- **Actor:** editor o admin comprometido.
+- **Pasos:** 1) subir `shell.php` como avatar/adjunto; 2) acceder a `/wp-content/uploads/shell.php`; 3) ejecutar comandos.
+- **Impacto:** RCE en el contenedor; movimiento lateral.
+- **Detección:** Falco (shell spawn), integridad de archivos, WAF.
+- **Control:** subidas sin ejecución, validación MIME, `DISALLOW_FILE_EDIT`, PSA/read-only FS.
 
-### AC-06 · Repackaging del APK
-- **Actor:** externo.
-- **Pasos:** 1) descargar APK; 2) decompilar, insertar override de host; 3) firmar y distribuir.
-- **Impacto:** troyano bancario, fraude a clientes.
-- **Detección:** Play Integrity / firma verificada en backend.
-- **Control:** ofuscación, verificación de firma, pinning, detección de tampering.
+### AC-06 · Manipulación de precio y cupones
+- **Actor:** cliente.
+- **Pasos:** 1) interceptar el checkout; 2) reducir el total o aplicar cupón dos veces en paralelo; 3) pagar menos.
+- **Impacto:** pérdida directa.
+- **Detección:** pedidos con total ≠ cálculo del servidor; alerta de anomalía.
+- **Control:** recálculo en servidor, cupón validado en transacción, idempotencia.
 
-### AC-07 · PR malicioso en el pipeline
-- **Actor:** colaborador o cuenta comprometida.
-- **Pasos:** 1) abrir PR que modifica workflow; 2) exfiltrar secretos vía `pull_request_target`; 3) desplegar imagen alterada.
-- **Impacto:** compromiso total de la cadena de suministro.
-- **Detección:** revisión obligatoria de `.github/`, diff de workflows, alerta de cambio de workflow.
-- **Control:** permisos mínimos, sin `pull_request_target`, WIF con condición de repo/rama, branch protection.
+### AC-07 · Cadena de suministro: PR o plugin comprometido
+- **Actor:** colaborador o cuenta robada.
+- **Pasos:** 1) PR que modifica el workflow o un plugin; 2) exfiltra secretos o introduce backdoor; 3) se despliega por pipeline.
+- **Impacto:** compromiso total y persistente.
+- **Detección:** revisión obligatoria, diff de workflows, gitleaks, integridad de plugins.
+- **Control:** permisos mínimos, sin `pull_request_target`, acciones pinneadas, WIF condicionado.
 
-### AC-08 · Abuso de función legítima de exportación
-- **Actor:** insider con rol de operador.
-- **Pasos:** 1) exportar estados de cuenta de 200 clientes; 2) descargar sin justificación.
-- **Impacto:** fuga interna; repudio.
-- **Detección:** regla de volumen por usuario (UEBA), log de exportación con autor.
-- **Control:** límite de exportación, aprobación de segundo usuario, auditoría.
+### AC-08 · Scraping y exportación masiva
+- **Actor:** competidor o insider.
+- **Pasos:** 1) recorrer catálogo y precios con 200 req/min; 2) exportar clientes desde admin; 3) descargar sin justificación.
+- **Impacto:** pérdida de ventaja competitiva, fuga de PII.
+- **Detección:** alerta por volumen y ASN; log de exportación con autor.
+- **Control:** bot management, límite de exportación, aprobación de segundo usuario, auditoría.
 
-## 3. Tabla resumen para el informe
+## 3. Resumen para el informe
 
 | ID | Caso | Actor | STRIDE | Activo | DREAD | Control | Detectado |
 |---|---|---|---|---|---|---|---|
-| AC-01 | Paginación abusiva | autenticado | I | A-04 | 7.8 | rate limit + tope | pendiente |
-| AC-02 | Fuerza bruta | externo | S | A-01 | 7.4 | 429 + MFA | pendiente |
-| AC-03 | Bypass MFA | externo | E | A-02 | 7.6 | scopes/amr | pendiente |
-| AC-04 | Transferencia IDOR | autenticado | E | A-04 | 9.6 | authz objeto | pendiente |
-| AC-05 | Robo de sesión | local | I | A-02 | 6.6 | Keystore + binding | pendiente |
-| AC-06 | Repackaging | externo | S/T | A-05 | 7.2 | firma + pinning | pendiente |
-| AC-07 | PR malicioso | insider | T/I | A-12 | 7.6 | WIF + permisos | pendiente |
-| AC-08 | Exportación masiva | insider | R/I | A-03 | 6.0 | UEBA + límite | pendiente |
+| AC-01 | Card testing | externo | D | A-22 | 7.6 | Turnstile + rate limit | pendiente |
+| AC-02 | Fuerza bruta/XML-RPC | externo | S | A-04 | 8.8 | WAF + 2FA | pendiente |
+| AC-03 | Plugin vulnerable | externo | E | A-06 | 8.2 | WPScan + WAF + Falco | pendiente |
+| AC-04 | Pedido ajeno | cliente | I/E | A-02 | 9.0 | autorización por objeto | pendiente |
+| AC-05 | Shell en uploads | insider | E | A-09 | 7.6 | uploads sin ejecución | pendiente |
+| AC-06 | Precio/cupón | cliente | T | A-02 | 7.2 | recálculo servidor | pendiente |
+| AC-07 | Cadena de suministro | insider | T/I | A-12 | 7.6 | WIF + permisos | pendiente |
+| AC-08 | Scraping/export | competidor | I | A-01 | 7.6 | bot mgmt + límites | pendiente |

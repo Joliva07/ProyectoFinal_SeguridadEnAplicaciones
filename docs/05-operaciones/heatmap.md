@@ -1,10 +1,10 @@
 # Matriz de calor (heatmap) antes y después
 
-Dueño: **Arun** con **Javier** · Componente de rúbrica 1 y 4 · Insumo: `docs/01-activos-riesgos/matriz-riesgos.md`
+Dueño: **Arun** con **Javier** · Componentes de rúbrica 1 y 4 · Insumo: `docs/01-activos-riesgos/matriz-riesgos.md`
 
-## 1. Escala y zonas
+## 1. Zonas
 
-Probabilidad × Impacto (1–5 cada uno).
+Probabilidad × Impacto (1–5).
 
 | P × I | Zona | Color |
 |---|---|---|
@@ -13,35 +13,38 @@ Probabilidad × Impacto (1–5 cada uno).
 | 5–9 | Medio | amarillo |
 | 1–4 | Bajo | verde |
 
-## 2. Puntos evaluados
+## 2. Puntos
 
-| ID | Riesgo | P inicial | I inicial | Score | Zona | P residual | I residual | Score residual | Zona residual |
+| ID | Riesgo | P ini | I ini | Score | Zona | P res | I res | Score res | Zona res |
 |---|---|---|---|---|---|---|---|---|---|
-| R-01 | IDOR/BOLA cuentas | 4 | 5 | 20 | Crítico | 2 | 2 | 4 | Bajo |
-| R-02 | Transferencia no autorizada | 3 | 5 | 15 | Crítico | 1 | 3 | 3 | Bajo |
-| R-03 | JWT débil | 3 | 5 | 15 | Crítico | 1 | 3 | 3 | Bajo |
-| R-04 | Hash de contraseña débil | 4 | 4 | 16 | Crítico | 2 | 2 | 4 | Bajo |
-| R-05 | Secreto expuesto | 4 | 5 | 20 | Crítico | 1 | 3 | 3 | Bajo |
-| R-06 | Errores verbosos | 5 | 2 | 10 | Alto | 2 | 2 | 4 | Bajo |
-| R-07 | Sin rate limiting | 4 | 4 | 16 | Crítico | 2 | 2 | 4 | Bajo |
-| R-08 | Sin WAF | 3 | 4 | 12 | Alto | 1 | 3 | 3 | Bajo |
-| R-09 | Origen accesible directo | 3 | 4 | 12 | Alto | 1 | 3 | 3 | Bajo |
-| R-10 | Bucket público | 2 | 5 | 10 | Alto | 1 | 3 | 3 | Bajo |
-| R-11 | 22/3389 abierto | 2 | 5 | 10 | Alto | 1 | 3 | 3 | Bajo |
-| R-12 | BD con IP pública | 3 | 5 | 15 | Crítico | 1 | 3 | 3 | Bajo |
-| R-13 | Imagen sin parches | 4 | 3 | 12 | Alto | 2 | 3 | 6 | Medio |
-| R-14 | APK sin endurecer | 4 | 4 | 16 | Crítico | 2 | 4 | 8 | Medio |
-| R-15 | Datos sin cifrar en móvil | 3 | 4 | 12 | Alto | 1 | 3 | 3 | Bajo |
-| R-16 | Admin por canal de clientes | 2 | 5 | 10 | Alto | 1 | 3 | 3 | Bajo |
-| R-17 | Pipeline sin controles | 4 | 4 | 16 | Crítico | 2 | 2 | 4 | Bajo |
-| R-18 | Sin MFA | 4 | 4 | 16 | Crítico | 1 | 3 | 3 | Bajo |
-| R-19 | Sin centralización de logs | 5 | 3 | 15 | Crítico | 2 | 2 | 4 | Bajo |
-| R-20 | Sin auditoría de cambios | 4 | 4 | 16 | Crítico | 2 | 2 | 4 | Bajo |
-| R-21 | IAM excesivo | 3 | 5 | 15 | Crítico | 1 | 3 | 3 | Bajo |
-| R-22 | Un operador de Cloudflare | 3 | 3 | 9 | Medio | 3 | 3 | 9 | Medio |
-| R-23 | Dependencia del proveedor | 1 | 5 | 5 | Medio | 1 | 5 | 5 | Medio |
-| R-24 | Phishing a admin | 3 | 4 | 12 | Alto | 2 | 3 | 6 | Medio |
-| R-25 | Datos reales en capturas | 3 | 4 | 12 | Alto | 1 | 2 | 2 | Bajo |
+| R-01 | Plugin con CVE | 4 | 5 | 20 | Crítico | 2 | 3 | 6 | Medio |
+| R-02 | SQLi plugin propio | 3 | 5 | 15 | Crítico | 1 | 3 | 3 | Bajo |
+| R-03 | XSS almacenado | 4 | 3 | 12 | Alto | 2 | 2 | 4 | Bajo |
+| R-04 | CSRF admin | 3 | 4 | 12 | Alto | 2 | 2 | 4 | Bajo |
+| R-05 | IDOR pedidos | 4 | 4 | 16 | Crítico | 2 | 3 | 6 | Medio |
+| R-06 | Fuerza bruta/XML-RPC | 5 | 3 | 15 | Crítico | 2 | 2 | 4 | Bajo |
+| R-07 | Enumeración | 5 | 2 | 10 | Alto | 2 | 2 | 4 | Bajo |
+| R-08 | Upload PHP | 2 | 5 | 10 | Alto | 1 | 3 | 3 | Bajo |
+| R-09 | `wp-config`/backups | 3 | 5 | 15 | Crítico | 1 | 3 | 3 | Bajo |
+| R-10 | Escape de contenedor | 2 | 5 | 10 | Alto | 1 | 3 | 3 | Bajo |
+| R-11 | Imagen con CVEs | 4 | 3 | 12 | Alto | 2 | 3 | 6 | Medio |
+| R-12 | K8s sin red/RBAC | 3 | 4 | 12 | Alto | 1 | 3 | 3 | Bajo |
+| R-13 | SQL accesible/root | 3 | 5 | 15 | Crítico | 1 | 3 | 3 | Bajo |
+| R-14 | Bucket público | 2 | 5 | 10 | Alto | 1 | 3 | 3 | Bajo |
+| R-15 | WAF débil | 4 | 4 | 16 | Crítico | 2 | 3 | 6 | Medio |
+| R-16 | Sin rate limit/bot | 4 | 3 | 12 | Alto | 2 | 2 | 4 | Bajo |
+| R-17 | Origen directo | 3 | 4 | 12 | Alto | 1 | 3 | 3 | Bajo |
+| R-18 | TLS débil | 3 | 3 | 9 | Medio | 1 | 2 | 2 | Bajo |
+| R-19 | Secretos en repo/env | 4 | 5 | 20 | Crítico | 1 | 3 | 3 | Bajo |
+| R-20 | Admin sin MFA | 3 | 5 | 15 | Crítico | 1 | 3 | 3 | Bajo |
+| R-21 | Sin auditoría | 5 | 3 | 15 | Crítico | 2 | 2 | 4 | Bajo |
+| R-22 | Backups sin restore | 3 | 4 | 12 | Alto | 1 | 3 | 3 | Bajo |
+| R-23 | Pipeline sin controles | 4 | 4 | 16 | Crítico | 2 | 2 | 4 | Bajo |
+| R-24 | Sin Pod Security | 3 | 4 | 12 | Alto | 1 | 2 | 2 | Bajo |
+| R-25 | Proveedor cloud | 1 | 5 | 5 | Medio | 1 | 5 | 5 | Medio |
+| R-26 | Phishing/agencia | 3 | 4 | 12 | Alto | 2 | 3 | 6 | Medio |
+| R-27 | Datos reales en capturas | 3 | 3 | 9 | Medio | 1 | 2 | 2 | Bajo |
+| R-28 | Un operador de Cloudflare | 3 | 3 | 9 | Medio | 3 | 3 | 9 | Medio |
 
 ## 3. Antes
 
@@ -54,20 +57,18 @@ quadrantChart
     quadrant-2 Alto
     quadrant-3 Bajo
     quadrant-4 Medio
-    R-01: [0.80, 0.95]
-    R-02: [0.60, 0.95]
-    R-03: [0.60, 0.95]
-    R-04: [0.80, 0.80]
-    R-05: [0.80, 0.95]
-    R-07: [0.80, 0.80]
-    R-12: [0.60, 0.95]
-    R-14: [0.80, 0.80]
-    R-17: [0.80, 0.80]
-    R-18: [0.80, 0.80]
-    R-19: [0.95, 0.60]
-    R-21: [0.60, 0.95]
-    R-22: [0.60, 0.60]
-    R-13: [0.80, 0.60]
+    R-01: [0.80, 1.00]
+    R-02: [0.60, 1.00]
+    R-05: [0.80, 0.80]
+    R-06: [1.00, 0.60]
+    R-09: [0.60, 1.00]
+    R-13: [0.60, 1.00]
+    R-15: [0.80, 0.80]
+    R-19: [0.80, 1.00]
+    R-20: [0.60, 1.00]
+    R-21: [1.00, 0.60]
+    R-23: [0.80, 0.80]
+    R-08: [0.40, 1.00]
 ```
 
 ## 4. Después
@@ -81,29 +82,30 @@ quadrantChart
     quadrant-2 Alto
     quadrant-3 Bajo
     quadrant-4 Medio
-    R-01: [0.40, 0.40]
-    R-05: [0.20, 0.60]
-    R-07: [0.40, 0.40]
-    R-14: [0.40, 0.80]
-    R-13: [0.40, 0.60]
-    R-22: [0.60, 0.60]
-    R-23: [0.20, 0.95]
-    R-24: [0.40, 0.60]
+    R-01: [0.40, 0.60]
+    R-05: [0.40, 0.60]
+    R-11: [0.40, 0.60]
+    R-15: [0.40, 0.60]
+    R-25: [0.20, 1.00]
+    R-26: [0.40, 0.60]
+    R-28: [0.60, 0.60]
+    R-03: [0.40, 0.40]
+    R-06: [0.40, 0.40]
 ```
 
 ## 5. Lectura del cambio
 
 | Zona | Inicial | Residual |
 |---|---|---|
-| Crítico | 13 | 0 |
-| Alto | 8 | 0 |
-| Medio | 3 | 5 |
-| Bajo | 1 | 20 |
+| Crítico | 11 | 0 |
+| Alto | 13 | 0 |
+| Medio | 4 | 7 |
+| Bajo | 0 | 21 |
 
-Los riesgos que quedan en Medio son los aceptados (R-22, R-23), los que dependen de terceros (R-13 imagen base) y el móvil (R-14), donde el pinning reduce la probabilidad pero no el impacto de un dispositivo comprometido. Se declara explícitamente: **no hay riesgo crítico sin control**.
+Lo que queda en Medio son riesgos aceptados (R-25, R-28) y riesgos donde el control reduce probabilidad pero no impacto: plugin con CVE (R-01), IDOR (R-05), imagen base (R-11), WAF (R-15) y phishing (R-26). Se declara explícitamente: **no queda riesgo crítico sin control**.
 
 ## 6. Reglas de honestidad
 
-1. El heatmap residual no puede mejorar sin evidencia de la prueba del control.
-2. Un riesgo re-puntuado hacia abajo sin cambio técnico es un error, no una mejora.
-3. Las cifras finales se recalculan con los datos reales de la fase 4; las de este documento son la proyección del diseño.
+1. El residual no mejora sin evidencia de la prueba del control.
+2. Re-puntuar a la baja sin cambio técnico es un error, no una mejora.
+3. Las cifras finales se recalculan con los `H-NN` reales; las de aquí son la proyección del diseño.

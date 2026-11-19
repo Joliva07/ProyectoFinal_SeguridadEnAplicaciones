@@ -1,66 +1,71 @@
 # WAF y controles de borde
 
-Especifica: **Arun** · Aplica: **James** (único con acceso a Cloudflare) · Componente de rúbrica 4
+Especifica: **Arun** · Aplica: **James** (único con Cloudflare) · Componente de rúbrica 4
 
-## 1. Capas de protección
+## 1. Capas
 
 | Capa | Producto | Función | Estado |
 |---|---|---|---|
-| 1 | Cloudflare WAF + Managed Rules (OWASP Core) | Bloqueo de payloads conocidos | por aplicar |
-| 2 | Reglas custom Cloudflare | Lógica propia del negocio | por aplicar |
-| 3 | Rate limiting | Fuerza bruta y abuso | por aplicar |
-| 4 | Bot management / Turnstile | Automatización | por aplicar |
-| 5 | Cloud Armor (GCP) | Segunda línea y geo/rate por backend | por aplicar |
-| 6 | Cloudflare Access | Admin fuera de Internet | por aplicar |
+| 1 | Cloudflare Managed Rules (OWASP CRS) | Payloads conocidos, paranoia 2 | por aplicar |
+| 2 | Reglas custom Cloudflare | Lógica de WordPress/WooCommerce | por aplicar |
+| 3 | Rate limiting | Fuerza bruta, card testing, scraping | por aplicar |
+| 4 | Bot management / Turnstile | Automatización en login y checkout | por aplicar |
+| 5 | Cloud Armor | Segunda línea en el LB | por aplicar |
+| 6 | Cloudflare Access | Admin y staging fuera de Internet | por aplicar |
 
-## 2. Reglas custom propuestas
+## 2. Reglas custom
 
-| ID | Nombre | Expresión | Acción | Riesgo que mitiga |
+| ID | Nombre | Expresión | Acción | Riesgo |
 |---|---|---|---|---|
-| W-01 | Bloquear métodos no usados | `http.request.method in {"TRACE" "TRACK" "CONNECT"}` | block | R-06, fingerprinting |
-| W-02 | Bloquear paths de archivos | `http.request.uri.path matches "(?i)(\\.env|\\.git|\\.htaccess|\\.bak|\\.sql)$"` | block | R-08 |
-| W-03 | Login sin UA | `http.request.uri.path eq "/v1/auth/login" and not http.user_agent contains "FinanciaWeb"` | managed_challenge | AC-02 |
-| W-04 | Forcejeo de auth | `http.request.uri.path contains "/v1/auth/" and rate(1m) > 10` | block por 10 min | AC-02 |
-| W-05 | Paginación abusiva | `http.request.uri.query contains "limit=" and http.request.uri.query matches "(?i)limit=(1[0-9]{2,}|[5-9][0-9])"` | block | AC-01 |
-| W-06 | Escaneo de rutas admin desde clientes | `http.request.uri.path contains "/v1/admin/" and ip.geoip.country ne "GT"` | block | AC-08 (ajustar a realidad) |
-| W-07 | Cuerpo grande en API | `http.request.body.size > 1048576 and http.request.uri.path contains "/v1/"` | block | R-07 |
-| W-08 | SQLi/XSS gestionadas | OWASP Core Ruleset, paranoia 2 | managed_challenge | R-01, R-06 |
-| W-09 | Proteger `admin` | Access + `not cf.access` | block | R-16 |
-| W-10 | Bloqueo de ASN de hosting | lista editable | managed_challenge | AC-02 |
+| W-01 | Bloquear XML-RPC | `http.request.uri.path eq "/xmlrpc.php"` | block | R-06 |
+| W-02 | Proteger login | `http.request.uri.path eq "/wp-login.php" and rate(1m) > 10` | block 10 min | R-06 |
+| W-03 | Bloquear enumeración REST | `http.request.uri.path eq "/wp-json/wp/v2/users" and not cf.threat_score lt 10` | block | R-07 |
+| W-04 | Bloquear archivos sensibles | `http.request.uri.path matches "(?i)(\\.env|\\.git|\\.bak|\\.sql|debug\\.log|wp-config\\.php\\.)"` | block | R-09 |
+| W-05 | Sin PHP en uploads | `http.request.uri.path contains "/wp-content/uploads/" and http.request.uri.path contains ".php"` | block | R-08 |
+| W-06 | Editor y mods de plugins | `http.request.uri.path matches "/wp-admin/(plugin|theme)-editor\\.php"` | block | R-04 |
+| W-07 | Proteger checkout | `http.request.uri.path contains "/checkout" and rate(1m) > 5` | managed_challenge | R-16 |
+| W-08 | Cuerpo grande en API | `http.request.body.size > 1048576 and http.request.uri.path contains "/wp-json/"` | block | R-15 |
+| W-09 | Admin solo via Access | `http.request.uri.path contains "/wp-admin/" and not cf.access` | block | R-20 |
+| W-10 | Scraping de catálogo | `rate(1m) > 120` | managed_challenge | R-16 |
+| W-11 | Métodos no usados | `http.request.method in {"TRACE" "TRACK" "CONNECT"}` | block | R-18 |
+| W-12 | Exploits de plugins conocidos | reglas CRS + firmas de CVE en la ventana | block | R-01 |
 
-Toda regla se activa primero en **log** 24 h, se revisan falsos positivos, y luego pasa a **block**. La tabla de cambios registra fecha, quien aplicó y resultado.
+Toda regla arranca en **log** 24 h, se revisan falsos positivos y luego pasa a **block**. El cambio se registra con fecha y resultado.
 
 ## 3. Rate limiting
 
-| Ruta | Límite | Ventana | Acción al exceder |
+| Ruta | Límite | Ventana | Acción |
 |---|---|---|---|
-| `api.*/v1/auth/*` | 10 req | 1 min por IP | block 10 min |
-| `api.*/v1/transfers` | 5 req | 1 min por usuario | block 1 min + alerta |
-| `api.*/*` | 100 req | 1 min por IP | managed_challenge |
-| `financiaweb.*` | 300 req | 1 min por IP | managed_challenge |
+| `/wp-login.php` | 10 | 1 min por IP | block 10 min |
+| `/xmlrpc.php` | 2 | 1 min | block |
+| `/checkout/*` | 5 | 1 min por IP | challenge + block |
+| `/wp-json/*` | 60 | 1 min por IP | challenge |
+| `/*` | 150 | 1 min por IP | challenge |
 
 ## 4. Cabeceras y TLS
 
-- HSTS: `max-age=31536000; includeSubDomains` (preload al cierre).
-- TLS mínimo 1.2, 1.3 activo, cifrados modernos, OCSP stapling.
-- `Server` y `X-Powered-By` eliminados en origen.
-- CSP en el portal: `default-src 'self'; frame-ancestors 'none'`.
-- CORS: origen exacto `https://financiaweb.ancordss.me.uk`; nunca `*` con credenciales.
-- Authenticated Origin Pull / restricción a rangos de Cloudflare en el LB.
+- HSTS `max-age=31536000; includeSubDomains` (preload al cierre).
+- TLS mínimo 1.2, 1.3 activo, OCSP stapling; Full (strict).
+- CSP del storefront: `default-src 'self'; frame-ancestors 'none'` (ajustar inline de WooCommerce o usar nonce).
+- CORS: origen exacto; nunca `*` con credenciales.
+- Eliminar `Server`, `X-Powered-By`, `X-Pingback`, `Link: <...wp-json...>`.
+- Cloudflare Authenticated Origin Pull (mTLS) hacia el LB.
 
-## 5. Prueba de efectividad (obligatoria)
+## 5. Pruebas de efectividad (obligatorias)
 
 | Prueba | Comando / técnica | Antes | Después |
 |---|---|---|---|
-| SQLi básica | `curl ".../v1/accounts?id=1' OR '1'='1"` | 200 con error | 403 de Cloudflare |
-| XSS reflejado | `?q=<script>alert(1)</script>` | reflejado | 403 |
-| Path traversal | `/../../.env` | 200/500 | 403 |
-| Fuerza bruta | 30 intentos de login | 30 × 401 | 429/403 desde el intento 11 |
-| Paginación | `?limit=5000` | 5000 registros | 403 |
-| Origen directo | `curl https://*.run.app` | 200 | 403 |
+| XML-RPC | `curl -X POST .../xmlrpc.php -d '<methodCall/>'` | 200 | 403 |
+| Fuerza bruta | 30 POST a `wp-login` | 30 × 200 | 429 desde el intento 11 |
+| Enumeración | `GET /wp-json/wp/v2/users` | 200 con lista | 403 |
+| Archivo sensible | `GET /.env`, `/wp-config.php.bak` | 200/500 | 403 |
+| PHP en uploads | `GET /wp-content/uploads/x.php` | 200 | 403 |
+| SQLi CRS | `?s=1' OR '1'='1` | 200 | 403 |
+| Origen directo | `curl` al LB sin Host | 200 | 403 |
+| Scraping | 200 GET a `/shop` | 200 todas | challenge/429 |
 
-Cada fila se captura con `curl -i` y fecha; va a `evidencias/fase5/waf-<fecha>/`.
+Cada fila con `curl -i` y fecha en `evidencias/fase5/waf-<fecha>/`.
 
 ## 6. Limitaciones declaradas
 
-Cloudflare Free/Pro no incluye algunas reglas avanzadas (p. ej. ciertas de bot management y API Shield completas). Se documenta qué control es gratuito y cuál es propuesta de nivel pago, sin presentar como implementado lo que no lo está.
+Cloudflare Free/Pro no incluye todas las reglas de bot management ni API Shield completo. Se documenta qué control es gratuito, cuál es propuesta de plan pago y cuál se compensa con Cloud Armor o lógica de aplicación. La caché se excluye de `wp-admin`, `wp-json`, `cart`, `checkout` y `my-account` para no servir datos de otro usuario.

@@ -2,54 +2,60 @@
 
 Dueño: **Javier** · Insumo: `stride.md` · Salida: severidad inicial para `matriz-riesgos.md`
 
-## 1. Escala (1–10 por dimensión)
+## 1. Escala (1–10)
 
 | Dimensión | 1–3 | 4–6 | 7–10 |
 |---|---|---|---|
-| **D** Damage (daño) | Cosmético o interno | Pérdida de datos limitada | Pérdida financiera, legal o total |
-| **R** Reproducibility (reproducibilidad) | Requiere condiciones raras | Repetible con esfuerzo | Siempre, con un clic |
-| **E** Exploitability (explotabilidad) | Requiere cadena compleja | Herramienta pública + conocimiento | Script trivial / sin autenticación |
-| **A** Affected users (usuarios afectados) | Un usuario | Un segmento | Todos los clientes |
-| **D** Discoverability (descubribilidad) | Requiere acceso interno | Fuzzing o revisión guiada | Visible en la primera petición |
+| **D** Damage | Cosmético o interno | Pérdida limitada | Financiero, legal o total |
+| **R** Reproducibility | Condiciones raras | Repetible con esfuerzo | Siempre, con un clic |
+| **E** Exploitability | Cadena compleja | Herramienta pública | Público y sin autenticación |
+| **A** Affected users | Un usuario | Un segmento | Toda la base o la tienda |
+| **D** Discoverability | Requiere acceso interno | Fuzzing/revisión guiada | Visible en la primera petición |
 
-`DREAD = (D + R + E + A + D) / 5`, redondeado a un decimal.
+`DREAD = (D + R + E + A + D) / 5`
 
 | Rango | Severidad | Tratamiento esperado |
 |---|---|---|
-| 8.0–10 | Crítica | Mitigar antes de exponer; bloquea el release |
-| 6.0–7.9 | Alta | Mitigar en el sprint; control compensatorio mientras |
-| 4.0–5.9 | Media | Planificar; monitorear |
-| 1.0–3.9 | Baja | Aceptar o documentar |
+| 8.0–10 | Crítica | Mitigar antes de exponer; bloquea release |
+| 6.0–7.9 | Alta | Mitigar en el sprint; compensatorio mientras |
+| 4.0–5.9 | Media | Planificar y monitorear |
+| 1.0–3.9 | Baja | Aceptar y documentar |
 
-## 2. Puntuación de amenazas
+## 2. Puntuación
 
 | ID | Amenaza | D | R | E | A | D | DREAD | Severidad |
 |---|---|---|---|---|---|---|---|---|
-| T-15 | IDOR en `/accounts/{id}` | 9 | 10 | 9 | 10 | 10 | 9.6 | Crítica |
-| T-23 | Transferencia con rol de solo lectura | 10 | 8 | 7 | 9 | 6 | 8.0 | Crítica |
-| T-44 | Cuenta de servicio con permisos excesivos | 10 | 6 | 6 | 10 | 4 | 7.2 | Alta |
-| T-50 | PR malicioso con `pull_request_target` | 10 | 7 | 6 | 10 | 5 | 7.6 | Alta |
-| T-30 | Parcheo del APK / repackaging | 9 | 7 | 7 | 8 | 5 | 7.2 | Alta |
-| T-27 | Agotamiento de conexiones de BD | 7 | 8 | 8 | 9 | 7 | 7.8 | Alta |
-| T-12 | Algoritmo `none`/HS256 en JWT | 10 | 6 | 5 | 10 | 4 | 7.0 | Alta |
-| T-36 | Stack traces en respuestas | 6 | 10 | 9 | 8 | 10 | 8.6 | Crítica |
-| T-49 | Runner bloqueado / pipeline caído | 6 | 5 | 6 | 5 | 4 | 5.2 | Media |
-| T-55 | Exceso de privilegios humano | 8 | 5 | 5 | 6 | 4 | 5.6 | Media |
-| T-42 | Secreto en variable de entorno | 9 | 7 | 6 | 8 | 5 | 7.0 | Alta |
-| T-04 | Tokens en logs | 9 | 6 | 5 | 8 | 4 | 6.4 | Alta |
-| T-31 | Datos sin cifrar en el dispositivo | 8 | 7 | 6 | 7 | 5 | 6.6 | Alta |
-| T-05 | Bloqueo de cuenta por intentos | 4 | 9 | 9 | 6 | 9 | 7.4 | Alta |
-| T-37 | Flood HTTP contra el borde | 5 | 8 | 7 | 9 | 8 | 7.4 | Alta |
-| T-01 | Suplantación con credenciales robadas | 9 | 6 | 5 | 8 | 4 | 6.4 | Alta |
-| T-19 | Monto alterado en transferencia | 10 | 6 | 5 | 8 | 4 | 6.6 | Alta |
-| T-54 | Capturas con datos reales | 8 | 8 | 9 | 8 | 8 | 8.2 | Crítica |
+| T-16 | RCE por plugin desactualizado | 10 | 8 | 7 | 10 | 6 | 8.2 | Crítica |
+| T-11 | Upload de PHP y ejecución | 10 | 7 | 7 | 9 | 5 | 7.6 | Alta |
+| T-18 | IDOR en pedidos (REST) | 8 | 10 | 9 | 8 | 10 | 9.0 | Crítica |
+| T-09 | CSRF en acción admin | 9 | 6 | 6 | 6 | 4 | 6.2 | Alta |
+| T-12 | SQLi en búsqueda/plugin propio | 10 | 8 | 7 | 10 | 6 | 8.2 | Crítica |
+| T-13 | SQLi en plugin de terceros | 10 | 7 | 6 | 9 | 5 | 7.4 | Alta |
+| T-01 | Fuerza bruta en `wp-login` | 9 | 10 | 9 | 6 | 10 | 8.8 | Crítica |
+| T-05 | Amplificación XML-RPC | 7 | 9 | 9 | 8 | 9 | 8.4 | Crítica |
+| T-19 | Manipulación de precio/cupón | 8 | 8 | 7 | 7 | 6 | 7.2 | Alta |
+| T-22 | Card testing | 8 | 9 | 8 | 6 | 7 | 7.6 | Alta |
+| T-47 | PR malicioso (secretos) | 10 | 7 | 6 | 10 | 5 | 7.6 | Alta |
+| T-50 | SA con `editor` | 10 | 6 | 6 | 10 | 4 | 7.2 | Alta |
+| T-37 | Bucket público | 9 | 8 | 7 | 9 | 8 | 8.2 | Crítica |
+| T-35 | `wp-config` expuesto | 10 | 8 | 7 | 10 | 7 | 8.4 | Crítica |
+| T-28 | Escape de contenedor | 10 | 4 | 4 | 10 | 3 | 6.2 | Alta |
+| T-30 | Sin NetworkPolicy | 9 | 6 | 5 | 9 | 4 | 6.6 | Alta |
+| T-43 | Bypass de WAF | 8 | 7 | 6 | 8 | 5 | 6.8 | Alta |
+| T-44 | Origen accesible sin Cloudflare | 7 | 8 | 8 | 8 | 7 | 7.6 | Alta |
+| T-23 | Scraping de precios | 4 | 10 | 9 | 5 | 10 | 7.6 | Alta |
+| T-25 | Export masivo de clientes | 9 | 6 | 4 | 9 | 4 | 6.4 | Alta |
+| T-26 | Sin auditoría de pedidos | 9 | 6 | 4 | 10 | 3 | 6.4 | Alta |
+| T-32 | GKE API pública | 10 | 5 | 5 | 10 | 4 | 6.8 | Alta |
+| T-46 | DDoS volumétrico | 6 | 7 | 8 | 9 | 9 | 7.8 | Alta |
+| T-54 | Datos reales en capturas | 8 | 8 | 9 | 8 | 8 | 8.2 | Crítica |
 
 ## 3. Cómo puntuar en equipo
 
-1. Cada integrante puntúa en silencio (sin anclaje), se promedia y se discute solo la desviación > 2 puntos.
-2. Toda puntuación ≥ 7 en Exploitability exige evidencia (herramienta, versión, comando) o se baja a 6.
-3. El DREAD no sustituye a CVSS: cuando exista CVE o prueba de concepto, se registra CVSS 4.0 y se conserva DREAD para la priorización de negocio.
+1. Puntuación individual en silencio, promedio y discusión solo de desviaciones > 2 puntos.
+2. Toda `Exploitability ≥ 7` exige evidencia (herramienta, versión, comando) o baja a 6.
+3. El DREAD no sustituye a CVSS: cuando exista CVE o PoC, se registra CVSS 4.0 y se conserva DREAD para prioridad de negocio.
 
 ## 4. Re-puntuación
 
-Tras la fase 4 se vuelve a puntuar con los hallazgos reales (`H-NN`) y se registra la variación. La tabla final se copia al informe (sección 2.4) y alimenta el heatmap residual.
+Tras la fase 4 se vuelve a puntuar con los `H-NN` reales y se registra la variación. La tabla final se copia al informe §2.4 y alimenta el heatmap residual.

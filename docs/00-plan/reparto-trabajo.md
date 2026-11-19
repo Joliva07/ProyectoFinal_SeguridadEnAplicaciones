@@ -2,7 +2,7 @@
 
 ## 1. Principio
 
-La rúbrica son **5 componentes de 4 puntos**. Cada componente tiene **un responsable único (accountable)**: redacta, produce la evidencia y responde por ella. Los demás aportan piezas puntuales que ese responsable integra. Además del documento, todos construyen una porción del sistema —sin sistema desplegado no hay evidencia de pentest ni de operación.
+La rúbrica son **5 componentes de 4 puntos**. Cada componente tiene **un responsable único (accountable)**: redacta, produce la evidencia y responde por ella. Los demás aportan piezas que ese responsable integra. Todos construyen una porción del sistema: sin tienda desplegada no hay evidencia de pentest ni de operación.
 
 Regla de oro: **nadie documenta lo que no puede evidenciar.** Si un control no se implementó, se declara como propuesto y se justifica.
 
@@ -10,11 +10,11 @@ Regla de oro: **nadie documenta lo que no puede evidenciar.** Si un control no s
 
 | Integrante | Rol operativo | Componente de rúbrica (4 pts) | Construye |
 |---|---|---|---|
-| **James Maradiaga** | Lead Security Architect · borde e integración | 5. Informe técnico & APA | Zona Cloudflare (DNS/TLS/WAF/Access), IAM base, ensamblaje del informe, dictamen |
-| **Javier Oliva** | Gobierno de activos y riesgo | 1. Análisis de riesgos y activos | Modelo de datos, dataset sintético, cuentas demo |
-| **Josue** | Cloud architecture & DevSecOps | 2. Arquitectura Cloud & DevSecOps | Terraform, pipeline CI/CD, backend Cloud Run + Cloud SQL, Identity Platform |
-| **Horacio** | Ciberdefensa y cliente móvil | 3. Implementación de ciberdefensa | APK Android endurecido, ejecución de pentest, casos de abuso |
-| **Arun** | Operaciones de seguridad y mitigación | 4. Implementación de ciberseguridad | Reglas WAF (spec), SIEM, RASP/monitoreo, tratamiento del riesgo |
+| **James Maradiaga** | Lead Security Architect · borde e integración | 5. Informe técnico & APA | Zona Cloudflare (DNS/TLS/WAF/Access/Logpush), IAM base, ensamblaje del informe, dictamen |
+| **Javier Oliva** | Gobierno de activos y riesgo | 1. Análisis de riesgos y activos | Catálogo y pedidos sintéticos, cuentas demo, export de matrices |
+| **Josue** | Cloud architecture & DevSecOps | 2. Arquitectura Cloud & DevSecOps | Terraform, GKE + manifiestos, imagen CI, pipeline, Cloud SQL, evaluación de contenedores |
+| **Horacio** | Ciberdefensa y hardening del CMS | 3. Implementación de ciberdefensa | Imagen WordPress endurecida, configuración del CMS, pentest, revisión de plugins/temas |
+| **Arun** | Operaciones de seguridad y mitigación | 4. Implementación de ciberseguridad | Spec WAF, SIEM, Falco/integridad, tratamiento y heatmap residual |
 
 ## 3. Matriz RACI
 
@@ -27,42 +27,44 @@ R = ejecuta · A = responde · C = consultado · I = informado
 | Arquitectura de seguridad objetivo | **A** | I | **R** | C | C |
 | IAM de menor privilegio y cifrado | C | I | **A/R** | I | C |
 | Terraform + Checkov/tfsec | I | I | **A/R** | I | I |
-| Pipeline SAST/SCA/secretos/contenedores | C | I | **A/R** | C | C |
-| Backend Cloud Run + Cloud SQL | I | C | **A/R** | C | I |
-| APK Android + hardening (MASVS) | C | I | I | **A/R** | I |
+| Manifiestos K8s endurecidos | C | I | **A/R** | C | C |
+| Pipeline SAST/SCA/WPScan/Trivy | C | I | **A/R** | C | C |
+| Evaluación de contenedores y K8s | I | I | **A/R** | C | C |
+| Imagen y configuración del CMS | C | I | C | **A/R** | I |
+| Hardening del CMS y de plugins | C | I | I | **A/R** | C |
 | Pentest caja negra | C | I | C | **A/R** | C |
-| Pentest caja gris/blanca + OWASP API Top 10 | C | I | C | **A/R** | **R** |
+| Pentest caja gris/blanca + OWASP Web Top 10 | C | I | C | **A/R** | **R** |
+| Evaluación de plugins y temas | I | I | C | **A/R** | C |
 | Casos de abuso y superficie de ataque | I | C | C | **A/R** | C |
 | Reglas WAF Cloudflare / Cloud Armor | **A/R** | I | C | I | **R** |
-| SIEM, RASP y dashboards | C | I | C | I | **A/R** |
+| SIEM, Falco y dashboards | C | I | C | I | **A/R** |
 | Tratamiento del riesgo y heatmap residual | C | **R** | C | C | **A** |
 | Informe final, APA y dictamen | **A/R** | R | R | R | R |
 | Presupuesto, accesos y teardown | **A/R** | I | C | I | I |
 
 ## 4. Fichas por integrante
 
-### 4.1 James Maradiaga — Lead Security Architect (existente, sin componente nuevo)
+### 4.1 James Maradiaga — Lead Security Architect
 
 **Componente:** 5. Informe técnico & formato APA (4 pts).
 
 **Construye**
-- Proyecto GCP, facturación, APIs habilitadas, IAM base y Workload Identity Federation para GitHub Actions.
-- Zona Cloudflare: los 3 subdominios, TLS 1.3/Strict, HSTS, WAF gestionado + reglas custom (a partir de la spec de Arun), rate limiting, Bot Fight Mode, Cloudflare Access en `admin`, Turnstile en login, Logpush a GCS/BigQuery.
-- Reglas de enfrentamiento, ventana de pentest, control de presupuesto y teardown.
+- Proyecto GCP, facturación, APIs (GKE, Cloud SQL, GCS, KMS, Secret Manager, Artifact Registry, Cloud Armor), IAM base y Workload Identity Federation.
+- Zona Cloudflare: los 3 subdominios, TLS 1.3/Strict, HSTS, WAF gestionado + reglas custom (spec de Arun), rate limiting, bot management, Access en `admin` y `staging`, Turnstile en login/checkout, Logpush a GCS/BigQuery.
+- Reglas de enfrentamiento, ventana de pentest, presupuesto y teardown.
 
 **Documenta**
-- `docs/06-informe/informe-final.md` (ensamblaje, no redacción de todo).
-- `docs/00-plan/` — alcance, cronograma, accesos, rúbrica.
-- Resumen ejecutivo, conclusiones, recomendaciones, roadmap, lecciones aprendidas, dictamen.
+- `docs/00-plan/` — alcance, cronograma, accesos, rúbrica, este reparto.
+- `docs/06-informe/informe-final.md` — ensamblaje, resumen ejecutivo, conclusiones, recomendaciones, roadmap, lecciones aprendidas, dictamen.
 
 **Evidencia**
-- Capturas de DNS/TLS/WAF/Access; `dig` y `curl -I` antes/después; alertas de presupuesto; matriz de cumplimiento de la rúbrica.
+- Capturas DNS/TLS/WAF/Access; `dig` y `curl -I` antes/después; alertas de presupuesto; matriz de la rúbrica.
 
 **Definición de terminado**
-- 20/20 puntos mapeados a archivo y evidencia; documento en Arial 12/1.5/APA 7 con índice, tablas numeradas y referencias; revisión cruzada de los 4 informes parciales; PDF final generado.
+- 20/20 puntos mapeados a archivo y evidencia; documento Arial 12/1.5/APA 7 con índice, tablas numeradas y ≥15 referencias; PDF final.
 
-**Depende de:** specs WAF de Arun, hallazgos de Horacio, arquitectura de Josue, riesgos de Javier.
-**Riesgo propio:** cuello de botella de Cloudflare (mitigado con SLA 24 h) y ser el único con acceso de escritura a GCP de producción.
+**Depende de:** specs WAF de Arun, hallazgos de Horacio, arquitectura y evaluación de contenedores de Josue, riesgos de Javier.
+**Riesgo propio:** cuello de botella de Cloudflare y ser el único con escritura manual en GCP.
 
 ---
 
@@ -71,23 +73,23 @@ R = ejecuta · A = responde · C = consultado · I = informado
 **Componente:** 1. Análisis de riesgos y activos (4 pts).
 
 **Construye**
-- Modelo de datos de FinanciaWeb (clientes, cuentas, movimientos, sesiones, auditoría) y script de datos sintéticos.
-- Cuentas `demo-cliente-01..05`, `demo-admin-01` y rotación tras la fase 4.
+- Catálogo de 60 productos, 40 clientes, 150 pedidos y 30 cupones sintéticos; importador WooCommerce (CSV) y cuentas `demo-*`.
 
 **Documenta**
-- `docs/01-activos-riesgos/inventario-activos.md` — 30–40 activos con los 7 campos ISO 27001 exigidos.
-- `clasificacion-cia.md` — A/M/B por dimensión, criticidad calculada y justificación.
-- `stride.md` — STRIDE por componente y caso de abuso; `dread.md` — scoring con desglose.
-- `matriz-riesgos.md` — matriz inicial con ID `R-NN`, tipo, impacto, propietario y capa de las 7.
+- `docs/01-activos-riesgos/inventario-activos.md` — 26+ activos con los 7 campos ISO 27001.
+- `clasificacion-cia.md` — A/M/B, criticidad calculada y justificación.
+- `stride.md` — STRIDE por componente y flujo; `dread.md` — scoring con desglose.
+- `matriz-riesgos.md` — 28 riesgos con ID `R-NN`, tipo, impacto, capa y tratamiento.
+- `docs/06-informe/` §1.4 y §6.6 — normativas y referencias APA.
 
 **Evidencia**
-- Inventario exportado (CSV/MD), matriz con al menos 18 riesgos que cubran las 7 capas, heatmap inicial.
+- Inventario exportado (CSV + MD), matriz v1 y v2, heatmap inicial; CSV de datos sintéticos en `evidencias/fase1/`.
 
 **Definición de terminado**
-- Cada activo tiene propietario, custodio y usuarios con acceso; cada riesgo tiene STRIDE y DREAD; las 7 capas están explícitamente cubiertas con al menos 1 riesgo cada una; IDs estables reutilizados por los demás documentos.
+- Cada activo con propietario, custodio y usuarios; cada riesgo con STRIDE, DREAD y capa; al menos 1 riesgo por cada una de las 7 capas; IDs estables usados por los demás documentos.
 
-**Depende de:** arquitectura de Josue (para ubicación de activos), hallazgos de Horacio (para actualizar la matriz al cierre).
-**Riesgo propio:** documentar sin sistema construido; se mitiga con inventario de diseño + actualización en la semana 2.
+**Depende de:** arquitectura de Josue (ubicación de activos), hallazgos de Horacio (matriz v2).
+**Riesgo propio:** documentar antes de que exista el sistema; se mitiga con inventario de diseño + verificación en semana 2.
 
 ---
 
@@ -96,46 +98,48 @@ R = ejecuta · A = responde · C = consultado · I = informado
 **Componente:** 2. Arquitectura Cloud & DevSecOps (4 pts).
 
 **Construye**
-- Terraform: VPC/subredes, Cloud SQL PostgreSQL privado con CMEK, Cloud Run (`accounts`, `transfers`), Artifact Registry, Secret Manager, Cloud Armor, API Gateway/LB, buckets con uniform access, sinks de logs.
-- Backend de los 2 microservicios (Python/FastAPI o Node), con validación de JWT de Identity Platform, consultas parametrizadas y autorización por recurso.
-- Identity Platform: proveedor OIDC, client de Android, MFA TOTP y claims (`sub`, `role`, `acr`, `amr`).
-- GitHub Actions: Semgrep, OWASP Dependency-Check o Snyk, gitleaks, Trivy (imagen), Checkov/tfsec (IaC), build del APK, deploy por WIF.
+- Terraform: VPC/subred, GKE Autopilot privado, Cloud SQL MySQL con CMEK, Artifact Registry, Secret Manager, GCS, Cloud Armor, sinks de logs, estado remoto.
+- Manifiestos Kubernetes: Deployment PHP-FPM + Nginx, Service, Ingress, HPA, PDB, NetworkPolicy, Pod Security `restricted`, Workload Identity, read-only root FS, seccomp `RuntimeDefault`, límites de recursos.
+- Pipeline GitHub Actions: gitleaks, Semgrep (PHP), WPScan, composer/npm audit, Trivy, Checkov/tfsec (Terraform y K8s), build/push de imagen, deploy por WIF.
 
 **Documenta**
-- `docs/02-arquitectura/arquitectura-seguridad.md` — C4 + flujo de datos + controles por capa.
-- `docs/03-devsecops/pipeline.md`, `sast-sca.md`, `iac-hardening.md`.
+- `docs/02-arquitectura/arquitectura-seguridad.md` — C4, flujo de checkout, IAM, cifrado, decisiones.
+- `docs/03-devsecops/pipeline.md`, `sast-sca.md`, `iac-hardening.md`, `contenedores-k8s.md`.
+- `docs/04-ciberdefensa/evaluacion-contenedores.md` — 3.7 del informe.
+- Secciones 4.5, 4.6 y 4.7 del informe.
 
 **Evidencia**
-- `terraform plan` y reportes Checkov/tfsec; ejecuciones de Actions en verde/rojo controlado; reportes Semgrep/SCA/Trivy; URL de los servicios desplegados.
+- `terraform plan` redactado, Checkov/tfsec antes/después, `kubectl get` del namespace, reportes Trivy, ejecuciones de Actions, URL de la tienda.
 
 **Definición de terminado**
-- `terraform apply` reproducible desde cero; ningún puerto 22/3389 abierto; bucket sin acceso público; pipeline corre en cada PR y bloquea secretos; los 2 servicios responden por `api.financiaweb.ancordss.me.uk` solo con JWT válido.
+- `terraform apply` reproducible desde cero; GKE privado sin API pública; Pod Security `restricted` aplicado; 0 CRITICAL con fix en Trivy; pipeline bloquea secretos y despliega por WIF; tienda responde por `aurorashop.ancordss.me.uk`.
 
-**Depende de:** proyecto GCP de James (día 1), modelo de datos de Javier.
-**Riesgo propio:** es la ruta crítica; si se atrasa el backend, se bloquean las fases 4 y 6. Plan B: Cloud Run con SQLite/Cloud SQL mínimo el 25-nov y refinar después.
+**Depende de:** proyecto GCP de James (día 1), imagen y configuración de Horacio.
+**Riesgo propio:** es la ruta crítica; si GKE se atrasa, plan B es Cloud Run para la demo (se documenta la diferencia).
 
 ---
 
-### 4.4 Horacio — Ciberdefensa y cliente móvil
+### 4.4 Horacio — Ciberdefensa y cliente CMS
 
 **Componente:** 3. Implementación de ciberdefensa (4 pts).
 
 **Construye**
-- APK Android (Kotlin) o Flutter con: OAuth2 + PKCE contra Identity Platform, biometría (`BiometricPrompt`), tokens en Keystore/EncryptedSharedPreferences, certificate pinning, R8/obfuscación, detección de root/emulador, sin logs sensibles.
-- Ejecución de pentest: ZAP (baseline + activo), Nmap, Burp Community (manual), pruebas de BOLA/IDOR con dos cuentas, manipulación de JWT, bypass de MFA y paginación abusiva.
+- Imagen Docker multi-stage de WordPress + WooCommerce: `php.ini` endurecido, Nginx con reglas de bloqueo, usuario no root, sin herramientas de build, plugins fijados por versión, `wp-config.php` generado desde Secret Manager, `DISALLOW_FILE_EDIT`, XML-RPC deshabilitado, uploads sin ejecución PHP.
+- Configuración del CMS: roles y capacidades mínimas, MFA (TOTP), 2FA en admin, límites de intentos, `wp-cron` por sistema, versiones ocultas.
+- Ejecución de pentest: WPScan, ZAP (baseline + activo), Nmap, Burp Community, pruebas manuales de IDOR/BOLA en pedidos y REST, nonces/CSRF, capacidades, upload y SQLi en el plugin propio.
 
 **Documenta**
-- `docs/04-ciberdefensa/pentest-caja-negra.md`, `pentest-caja-gris.md`, `casos-abuso.md`, `superficie-ataque.md`.
-- Checklist MASVS en `docs/06-informe/informe-final.md` (anexo).
+- `docs/04-ciberdefensa/pentest-caja-negra.md`, `pentest-caja-gris.md`, `owasp-web-top10.md`, `evaluacion-plugins.md`, `casos-abuso.md`, `superficie-ataque.md`.
+- Secciones 3.1–3.4, 4.3 y 4.4 del informe.
 
 **Evidencia**
-- Reportes ZAP (HTML), capturas Burp redactadas, `nmap -sV`, PoC de IDOR con dos cuentas, `apktool`/`jadx` mostrando ofuscación, video/captura de biometría y pinning fallando ante proxy (mitmproxy).
+- Reportes WPScan y ZAP, `nmap -sV`, capturas Burp redactadas, PoC de IDOR con dos cuentas, `docker history`/Trivy de la imagen, `curl` a `xmlrpc.php` (405/403), prueba de upload rechazado.
 
 **Definición de terminado**
-- Al menos 8 hallazgos con ID `H-NN`, severidad CVSS 4.0, capa, STRIDE y evidencia reproducible; superficie de ataque mapeada con puertos/endpoints; casos de abuso con pasos y control de detección.
+- ≥8 hallazgos `H-NN` con CVSS 4.0, capa, STRIDE y evidencia reproducible; tabla API/REST completa; plugins evaluados con versión, CVE y decisión; superficie mapeada con bloqueo del origen verificado.
 
-**Depende de:** API desplegada (Josue, 25-nov), WAF base activo (James), cuentas demo (Javier).
-**Riesgo propio:** poca experiencia Android; plan B APK mínimo con WebView endurecido para conservar la evidencia de pinning/Keystore.
+**Depende de:** tienda desplegada (Josue, 25-nov), WAF base (James), catálogo (Javier).
+**Riesgo propio:** WooCommerce + GKE en 6 días; el plan B es la misma imagen en Cloud Run para conservar evidencia de WAF y pentest, declarando la diferencia.
 
 ---
 
@@ -144,52 +148,53 @@ R = ejecuta · A = responde · C = consultado · I = informado
 **Componente:** 4. Implementación de ciberseguridad (4 pts).
 
 **Construye**
-- Spec de reglas WAF (Cloudflare + Cloud Armor) mapeadas a OWASP Top 10 y API Top 10; James las aplica (SLA 24 h).
-- SIEM: sinks de Cloud Logging a BigQuery, consultas de correlación, alertas (login fallido masivo, 403/429 anómalos, acceso a recursos ajenos), dashboards.
-- Monitoreo de APIs/RASP: métricas de Cloud Run + Cloud Armor + Cloudflare Analytics; reglas de detección de paginación abusiva y enumeración.
-- Plan de mitigación por hallazgo (de Horacio y de SAST/SCA) y tratamiento formal del riesgo.
+- Spec de reglas WAF (Cloudflare + Cloud Armor) específicas de WordPress/WooCommerce, mapeadas a OWASP Top 10; James las aplica (SLA 24 h).
+- SIEM: sinks de Cloud Logging y Logpush a BigQuery, consultas de correlación, alertas (exploit de plugin, fuerza bruta, card testing, cambios de archivos, `kubectl exec`), dashboards.
+- RASP/monitoreo: Falco en GKE, verificación de integridad del CMS (checksums de núcleo + hash de plugins), monitoreo de `/wp-json/wc/v3/*`.
+- Plan de mitigación por hallazgo y tratamiento formal del riesgo.
 
 **Documenta**
 - `docs/05-operaciones/waf-cloudflare.md`, `rasp-monitoreo.md`, `siem.md`, `tratamiento-riesgo.md`, `heatmap.md`.
-- Evaluación OWASP API Top 10 en `docs/04-ciberdefensa/pentest-caja-gris.md` (sección API).
+- Verificación de OWASP Web Top 10 en `docs/04-ciberdefensa/owasp-web-top10.md` (co-ejecución con Horacio).
+- Sección 4.2 y 5.1–5.6 del informe.
 
 **Evidencia**
-- Reglas WAF con capturas de bloqueo (antes/después), consultas BigQuery ejecutadas, alertas disparadas en prueba controlada, dashboard exportado, matriz aceptar/mitigar/transferir/evitar con heatmap antes-después.
+- Reglas WAF con capturas de bloqueo, consultas BigQuery, alertas disparadas, dashboard exportado, matriz de tratamiento y heatmap residual.
 
 **Definición de terminado**
-- Cada hallazgo `H-NN` tiene control compensatorio, responsable y estado; las 4 categorías de impacto (reputacional, operacional, financiero, legal) aparecen en la matriz; el heatmap residual muestra la reducción.
+- Cada `H-NN` con control, responsable y estado; 4 categorías de impacto (reputacional, operacional, financiero, legal) presentes; ≥2 alertas críticas probadas; heatmap residual con reducción verificada.
 
-**Depende de:** WAF base (James), hallazgos (Horacio), pipeline (Josue).
-**Riesgo propio:** sin acceso a Cloudflare, depende del ciclo de issues; se mitiga entregando specs completas (regla, expresión, acción) en lugar de instrucciones vagas.
+**Depende de:** WAF base (James), hallazgos (Horacio), pipeline y logs (Josue).
+**Riesgo propio:** sin acceso a Cloudflare depende del ciclo de issues; se mitiga entregando reglas con expresión exacta y caso de prueba.
 
 ## 5. Accesos
 
 | Recurso | James | Javier | Josue | Horacio | Arun |
 |---|---|---|---|---|---|
-| GitHub | admin (Ancordss) | admin (Joliva07, owner) | write (pendiente) | write (Horacio935) | write (pendiente) |
-| GCP `financiaweb-sec-umg` | Owner + billing | Viewer + BigQuery Viewer | Viewer + Logs Viewer (deploy vía CI) | Viewer + Artifact Reader | Viewer + Logs/Monitoring Viewer |
+| GitHub | admin (Ancordss) | admin (Joliva07) | write (pendiente) | write (Horacio935) | write (pendiente) |
+| GCP `aurorashop-sec-umg` | Owner + billing | Viewer + BigQuery Viewer | Viewer + Logs Viewer (deploy vía CI) | Viewer + Artifact Reader | Viewer + Logs/Monitoring Viewer |
 | Cloudflare | **Admin (único)** | — | — | — | — |
 | Claude | sí | sí | sí | sí | sí |
 
-Pendiente: confirmar usuarios de GitHub de **Josue** y **Arun**, y correos para las cuentas GCP. Sin nombres de usuario no se les puede asignar issues.
+Pendiente: usuarios de GitHub de **Josue** y **Arun**, y correos para sus cuentas GCP.
 
 ## 6. Coordinación
 
-1. **Un dueño por archivo.** La tabla de la sección 4 define quién edita qué. Cambios ajenos: PR + aviso en la issue.
-2. **Cloudflare:** issue con etiqueta `cloudflare`, plantilla "solicitud de borde" (host, regla, expresión, acción, evidencia esperada). SLA 24 h. James aplica y comenta la evidencia.
-3. **GCP de escritura:** solo pipeline y James. Nadie crea recursos a mano en `demo`; si hace falta, se abre issue.
-4. **Cadencia:** checkpoint escrito los martes en la issue de fase; demo de 15 min los viernes. Quien no llega avisa el lunes, no el viernes.
-5. **Revisión cruzada obligatoria:** Javier↔Josue (riesgos vs arquitectura), Horacio↔Arun (hallazgos vs mitigación), James revisa todo el informe.
-6. **Congelamiento documental:** 9-dic. Después de esa fecha solo se corrigen formato y erratas.
+1. **Un dueño por archivo.** Cambios ajenos: PR + aviso en la issue.
+2. **Cloudflare:** issue con etiqueta `cloudflare` y plantilla de borde (host, regla, expresión, acción, evidencia esperada). SLA 24 h. James aplica y comenta evidencia.
+3. **GCP de escritura:** solo pipeline y James. Nadie crea recursos a mano en `demo`.
+4. **Cadencia:** checkpoint escrito los martes en la issue de fase; demo de 15 min los viernes. Retrasos se avisan el lunes.
+5. **Revisión cruzada:** Javier↔Josue (riesgos vs arquitectura), Horacio↔Arun (hallazgos vs mitigación), James revisa todo el informe.
+6. **Congelamiento documental:** 9-dic; después solo formato y erratas.
 
 ## 7. Balance de carga
 
 | Integrante | Carga | Piezas | Nota |
 |---|---|---|---|
-| James | Alta | Informe completo + Cloudflare + IAM + integración | Su ventaja es que ya tiene el caso y el formato de semanas previas |
-| Javier | Media | 5 documentos + datos | Arranca sin dependencias, buen punto de partida |
-| Josue | Alta | Terraform + backend + CI | Ruta crítica; se le libera la parte móvil |
-| Horacio | Alta | APK + 4 documentos de pentest | Mayor incertidumbre técnica; respaldo definido |
-| Arun | Media | Specs WAF + SIEM + matriz | Depende de insumos, pero puede adelantar plantillas y consultas |
+| James | Alta | Informe + Cloudflare + IAM + integración | Ya tiene práctica con el formato APA del curso |
+| Javier | Media | 5 documentos + datos | Arranca sin dependencias |
+| Josue | Alta | Terraform + GKE + pipeline + contenedores | Ruta crítica; sin trabajo de CMS |
+| Horacio | Alta | Imagen/CMS + 6 documentos de evaluación | Mayor incertidumbre; plan B definido |
+| Arun | Media | WAF + SIEM + Falco + matriz | Puede adelantar consultas y plantillas |
 
-Nadie queda con dos componentes de rúbrica. Si alguien se cae, el respaldo es: Javier→activos/riesgo (James), Josue→IaC/pipeline (Horacio + James), Horacio→pentest (Arun), Arun→SIEM (James).
+Nadie con dos componentes de rúbrica. Respaldo si alguien se cae: Javier→riesgos (James), Josue→infra/pipeline (Horacio + James), Horacio→pentest (Arun), Arun→SIEM (James).

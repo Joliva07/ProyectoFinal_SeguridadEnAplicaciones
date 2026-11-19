@@ -37,7 +37,8 @@ Toda tabla de herramienta (ZAP, Semgrep, Trivy) cita su documentación oficial e
 ## 4. Referencias (formato)
 
 - OWASP Foundation. (2021). *OWASP Top 10:2021*. https://owasp.org/Top10/
-- OWASP Foundation. (2023). *OWASP API Security Top 10*. https://owasp.org/API-Security/
+- OWASP Foundation. (2021). *Web Security Testing Guide*. https://owasp.org/www-project-web-security-testing-guide/
+- Center for Internet Security. (2024). *CIS Kubernetes Benchmark*.
 - OWASP Foundation. (2025). *Application Security Verification Standard 5.0.0*.
 - International Organization for Standardization. (2022). *ISO/IEC 27001:2022*.
 - National Institute of Standards and Technology. (2020). *SP 800-207: Zero Trust Architecture*.
@@ -49,17 +50,18 @@ Toda tabla de herramienta (ZAP, Semgrep, Trivy) cita su documentación oficial e
 
 | # | Contenido | Autor |
 |---|---|---|
-| Tabla 1 | Perfil de seguridad de FinanciaWeb | Javier |
+| Tabla 1 | Perfil de seguridad de AuroraShop | Javier |
 | Tabla 2 | Inventario de activos (resumen) | Javier |
 | Tabla 3 | Matriz STRIDE | Javier |
 | Tabla 4 | Scoring DREAD | Javier |
 | Tabla 5 | Matriz de riesgos inicial | Javier |
-| Tabla 6 | Hallazgos caja negra | Horacio |
-| Tabla 7 | Hallazgos caja gris y API Top 10 | Horacio / Arun |
-| Tabla 8 | Resultados SAST/SCA/IaC | Josue |
-| Tabla 9 | Tratamiento y residual | Arun |
+| Tabla 6 | Hallazgos caja negra (WPScan/ZAP) | Horacio |
+| Tabla 7 | Hallazgos caja gris y OWASP Web Top 10 | Horacio / Arun |
+| Tabla 8 | Plugins y temas: versión, CVE y decisión | Horacio |
+| Tabla 9 | Resultados SAST/SCA/IaC/contenedores | Josue |
+| Tabla 10 | Tratamiento y residual | Arun |
 | Figura 1 | Arquitectura de seguridad | Josue |
-| Figura 2 | Flujo de transferencia | Josue |
+| Figura 2 | Flujo de checkout con controles | Josue |
 | Figura 3 | Superficie de ataque | Horacio |
 | Figura 4 | Heatmap antes/después | Arun |
 

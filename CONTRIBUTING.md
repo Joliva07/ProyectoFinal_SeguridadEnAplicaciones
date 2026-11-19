@@ -11,7 +11,7 @@
 
 ## Convención de commits
 
-`tipo(alcance): descripción` — `docs(fase1): inventario de activos ISO 27001`, `infra(fase5): reglas de seguridad en Terraform`, `ci(fase3): Semgrep en pull_request`, `fix(api): verificación de propiedad de cuenta`.
+`tipo(alcance): descripción` — `docs(fase1): inventario de activos ISO 27001`, `infra(fase5): reglas de seguridad en Terraform`, `ci(fase3): Semgrep en pull_request`, `fix(cms): verificación de propiedad del pedido`.
 
 Tipos: `docs`, `ci`, `infra`, `app`, `fix`, `chore`.
 
@@ -31,7 +31,7 @@ Tipos: `docs`, `ci`, `infra`, `app`, `fix`, `chore`.
 
 ## Prohibiciones
 
-- Credenciales, claves privadas, `terraform.tfstate`, `.env`, keystores (`*.jks`, `*.keystore`) o APKs firmados con claves reales.
+- Credenciales, claves privadas, `terraform.tfstate`, `.env`, claves de la pasarela de pago o `wp-config.php` reales.
 - `git push --force` a `main`.
 - Cambios en Cloudflare por alguien que no sea James (solicitar con issue + etiqueta `cloudflare`).
 - Escaneos contra dominios de terceros o contra `ancordss.me.uk` fuera del host del proyecto.
