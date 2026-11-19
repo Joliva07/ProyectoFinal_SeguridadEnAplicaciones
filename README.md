@@ -69,7 +69,7 @@ app/                     cliente Android + microservicios (responsables: Horacio
 
 ## Backlog
 
-Las 28 tareas están en **Issues** de GitHub, agrupadas en 3 hitos (Sprint 1 Fundaciones · Sprint 2 Evaluación · Sprint 3 Cierre) y etiquetadas por dueño (`owner/*`), fase (`fase/*`) y tipo (`infra`, `cloudflare`, `pentest`, `ops`, `informe`). El detalle de cada asignación está en [`docs/00-plan/reparto-trabajo.md`](docs/00-plan/reparto-trabajo.md) y el calendario en [`cronograma.md`](docs/00-plan/cronograma.md).
+Las 29 tareas están en **Issues** de GitHub, agrupadas en 3 hitos (Sprint 1 Fundaciones · Sprint 2 Evaluación · Sprint 3 Cierre) y etiquetadas por dueño (`owner/*`), fase (`fase/*`) y tipo (`infra`, `cloudflare`, `pentest`, `ops`, `informe`). El detalle de cada asignación está en [`docs/00-plan/reparto-trabajo.md`](docs/00-plan/reparto-trabajo.md) y el calendario en [`cronograma.md`](docs/00-plan/cronograma.md).
 
 ## Reglas del juego
 

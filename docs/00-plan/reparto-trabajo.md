@@ -12,7 +12,7 @@ Regla de oro: **nadie documenta lo que no puede evidenciar.** Si un control no s
 |---|---|---|---|
 | **James Maradiaga** | Lead Security Architect · borde e integración | 5. Informe técnico & APA | Zona Cloudflare (DNS/TLS/WAF/Access), IAM base, ensamblaje del informe, dictamen |
 | **Javier Oliva** | Gobierno de activos y riesgo | 1. Análisis de riesgos y activos | Modelo de datos, dataset sintético, cuentas demo |
-| **Josue** | Cloud architecture & DevSecOps | 2. Arquitectura Cloud & DevSecOps | Terraform, pipeline CI/CD, backend Cloud Run + Cloud SQL |
+| **Josue** | Cloud architecture & DevSecOps | 2. Arquitectura Cloud & DevSecOps | Terraform, pipeline CI/CD, backend Cloud Run + Cloud SQL, Identity Platform |
 | **Horacio** | Ciberdefensa y cliente móvil | 3. Implementación de ciberdefensa | APK Android endurecido, ejecución de pentest, casos de abuso |
 | **Arun** | Operaciones de seguridad y mitigación | 4. Implementación de ciberseguridad | Reglas WAF (spec), SIEM, RASP/monitoreo, tratamiento del riesgo |
 
@@ -98,6 +98,7 @@ R = ejecuta · A = responde · C = consultado · I = informado
 **Construye**
 - Terraform: VPC/subredes, Cloud SQL PostgreSQL privado con CMEK, Cloud Run (`accounts`, `transfers`), Artifact Registry, Secret Manager, Cloud Armor, API Gateway/LB, buckets con uniform access, sinks de logs.
 - Backend de los 2 microservicios (Python/FastAPI o Node), con validación de JWT de Identity Platform, consultas parametrizadas y autorización por recurso.
+- Identity Platform: proveedor OIDC, client de Android, MFA TOTP y claims (`sub`, `role`, `acr`, `amr`).
 - GitHub Actions: Semgrep, OWASP Dependency-Check o Snyk, gitleaks, Trivy (imagen), Checkov/tfsec (IaC), build del APK, deploy por WIF.
 
 **Documenta**
