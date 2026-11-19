@@ -1,6 +1,6 @@
 # Informe final — Opción B (CMS / E-Commerce Web Enterprise Cloud-Native)
 
-Responsable de ensamblaje: **Arun** · Autores: todo el equipo · Formato: UMG + APA 7
+Responsable de ensamblaje: **James** · Autores: todo el equipo · Formato: UMG + APA 7
 
 > Esqueleto con la estructura exigida. Cada sección indica autor y documento fuente. El PDF se produce en Word con `formato-apa.md`.
 
@@ -21,8 +21,8 @@ Universidad Mariano Gálvez de Guatemala · Facultad de Ingeniería en Sistemas 
 | Sección | Autor | Fuente |
 |---|---|---|
 | 1.1 Contexto del CMS / E-Commerce | Horacio | `README.md`, `alcance.md` §2 |
-| 1.2 Objetivos del proyecto | Arun | `alcance.md` §1 |
-| 1.3 Alcance | Arun | `alcance.md` §§3–5 |
+| 1.2 Objetivos del proyecto | James | `alcance.md` §1 |
+| 1.3 Alcance | James | `alcance.md` §§3–5 |
 | 1.4 Normativas y estándares | Javier | `alcance.md` §7 |
 | 1.5 Definición del scope técnico | Josue | `arquitectura-seguridad.md` §§1–3 |
 
@@ -53,7 +53,7 @@ Universidad Mariano Gálvez de Guatemala · Facultad de Ingeniería en Sistemas 
 | Sección | Autor | Fuente |
 |---|---|---|
 | 4.1 Rediseño arquitectónico cloud seguro | Josue | `arquitectura-seguridad.md` |
-| 4.2 Controles de seguridad propuestos | James | `tratamiento-riesgo.md` §2 |
+| 4.2 Controles de seguridad propuestos | Arun | `tratamiento-riesgo.md` §2 |
 | 4.3 Hardening del CMS | Horacio | `plugins-temas.md` §3 |
 | 4.4 Hardening de plugins y temas | Horacio | `plugins-temas.md` §§2–4 |
 | 4.5 Hardening de contenedores | Josue | `contenedores-k8s.md` §§1–2 |
@@ -64,22 +64,22 @@ Universidad Mariano Gálvez de Guatemala · Facultad de Ingeniería en Sistemas 
 
 | Sección | Autor | Fuente |
 |---|---|---|
-| 5.1 WAF | James | `waf-cloudflare.md` |
-| 5.2 RASP / protección en tiempo de ejecución | James | `rasp-monitoreo.md` |
-| 5.3 SIEM / correlación de eventos | James | `siem.md` |
-| 5.4 Alertas y dashboards | James | `siem.md` §§4–5 |
-| 5.5 Gestión continua de vulnerabilidades | Josue / James | `pipeline.md`, `sast-sca.md` |
-| 5.6 Tratamiento del riesgo | James | `tratamiento-riesgo.md`, `heatmap.md` |
+| 5.1 WAF | Arun / James | `waf-cloudflare.md` |
+| 5.2 RASP / protección en tiempo de ejecución | Arun | `rasp-monitoreo.md` |
+| 5.3 SIEM / correlación de eventos | Arun | `siem.md` |
+| 5.4 Alertas y dashboards | Arun | `siem.md` §§4–5 |
+| 5.5 Gestión continua de vulnerabilidades | Josue / Arun | `pipeline.md`, `sast-sca.md` |
+| 5.6 Tratamiento del riesgo | Arun | `tratamiento-riesgo.md`, `heatmap.md` |
 
 ## 6. Dictamen y mejores prácticas
 
 | Sección | Autor | Fuente |
 |---|---|---|
-| 6.1 Conclusiones | Arun | síntesis |
-| 6.2 Recomendaciones técnicas | Arun + leads | `tratamiento-riesgo.md` §4 |
-| 6.3 Roadmap de seguridad continua | Arun | tabla abajo |
+| 6.1 Conclusiones | James | síntesis |
+| 6.2 Recomendaciones técnicas | James + leads | `tratamiento-riesgo.md` §4 |
+| 6.3 Roadmap de seguridad continua | James | tabla abajo |
 | 6.4 Lecciones aprendidas | todo el equipo | un párrafo cada uno |
-| 6.5 Anexos | Arun | evidencias, checklists, capturas |
+| 6.5 Anexos | James | evidencias, checklists, capturas |
 | 6.6 Referencias | Javier | ≥ 15 fuentes APA 7 |
 
 ### Roadmap (6.3)
