@@ -10,7 +10,7 @@
 | Javier | — | Write | **pendiente: falta usuario** |
 | Arun | — | Write | **pendiente: falta usuario** |
 
-Invitación (solo James o Javier):
+Invitación (solo Josue, owner del repo):
 
 ```bash
 gh api -X PUT repos/Joliva07/ProyectoFinal_SeguridadEnAplicaciones/collaborators/<usuario> -f permission=push
