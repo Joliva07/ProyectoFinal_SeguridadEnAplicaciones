@@ -49,7 +49,7 @@ Nadie recibe `roles/editor` ni claves JSON. Pipeline con Workload Identity Feder
 - [ ] Buckets: `aurorashop-media` (privado, CMEK), `aurorashop-backups`, `aurorashop-logs-archive`; uniform access, sin `allUsers`.
 - [ ] Etiquetas `proyecto=aurorashop`, `ambiente`, `curso=seguridad-apps`.
 - [ ] Invitaciones IAM a los 4 integrantes (incluida la cuenta de facturación si aplica).
-- [ ] Otorgar a James acceso temporal de escritura solo durante el bootstrap y retirarlo después.
+- [ ] Escritura permanente solo para Javier; break-glass temporal documentado si otro necesita aplicar algo.
 
 ### 2.3 Cuentas demo
 

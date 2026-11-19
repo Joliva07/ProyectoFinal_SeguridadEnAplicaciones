@@ -116,7 +116,7 @@ R = ejecuta · A = responde · C = consultado · I = informado
 **Definición de terminado**
 - `terraform apply` reproducible desde cero; GKE privado sin API pública; Pod Security `restricted` aplicado; 0 CRITICAL con fix en Trivy; pipeline bloquea secretos y despliega por WIF; tienda responde por `aurorashop.ancordss.me.uk`.
 
-**Depende de:** proyecto GCP y accesos otorgados por Javier (día 1), imagen y configuración de Horacio.
+**Depende de:** proyecto GCP y accesos otorgados por Javier (día 1; el primer `terraform apply` del bootstrap lo ejecuta él), imagen y configuración de Horacio.
 **Riesgo propio:** es la ruta crítica; si GKE se atrasa, plan B es Cloud Run para la demo (se documenta la diferencia).
 
 ---
