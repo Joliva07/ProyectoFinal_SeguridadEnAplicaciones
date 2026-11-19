@@ -6,7 +6,7 @@ Aún sin código. Estructura prevista (se crea en la fase 2):
 
 ```
 infra/
-  bootstrap/      proyecto, APIs, bucket de estado, WIF (aplicado una vez por James)
+  bootstrap/      proyecto, APIs, bucket de estado, WIF (aplicado una vez por Javier)
   modules/
     network/      VPC, subredes (pods/servicios), Cloud NAT, firewall
     data/         Cloud SQL MySQL, KMS, Secret Manager, buckets

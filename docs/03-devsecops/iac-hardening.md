@@ -46,7 +46,7 @@ Dueño: **Josue** · Herramientas: Checkov + tfsec + kubesec · Componente de r�
 ## 4. Reglas de trabajo
 
 - El estado de Terraform vive en GCS versionado con bloqueo; nunca en el repo.
-- `terraform apply` solo desde el pipeline (WIF). El bootstrap inicial lo aplica James una vez y documenta la salida.
+- `terraform apply` solo desde el pipeline (WIF). El bootstrap inicial lo aplica Javier (dueño de la cuenta GCP) una vez y documenta la salida; después nadie aplica a mano.
 - Los manifiestos se generan/validan con `kustomize build` o `helm template` antes del apply; lo que no está en el repo no existe en el clúster.
 - `kubectl apply` manual queda prohibido; el break-glass se registra como incidente en `tratamiento-riesgo.md`.
 - Las excepciones a una regla de Checkov se documentan con `#checkov:skip=<ID>:<razón>` y fecha de revisión.
