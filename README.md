@@ -47,7 +47,7 @@ Todos con acceso a Google Cloud y Claude. **James opera Cloudflare**, **Javier a
 ## Mapa del repositorio
 
 ```
-docs/00-plan/            alcance, reparto, cronograma, rúbrica, accesos
+docs/00-plan/            plan de trabajo por persona, reparto, cronograma, rúbrica, accesos
 docs/01-activos-riesgos/ inventario ISO 27001, CIA, STRIDE, DREAD, matriz
 docs/02-arquitectura/    arquitectura de seguridad objetivo, diagramas
 docs/03-devsecops/       pipeline, SAST/SCA, IaC, contenedores/K8s, plugins
@@ -73,7 +73,9 @@ infra/                   Terraform + manifiestos Kubernetes (responsable: Josue)
 
 ## Backlog
 
-Las tareas están en **Issues** de GitHub, en 3 hitos (Sprint 1 Fundaciones · Sprint 2 Evaluación · Sprint 3 Cierre), etiquetadas por dueño (`owner/*`), fase (`fase/*`) y tipo (`infra`, `cloudflare`, `pentest`, `ops`, `informe`). Detalle de asignación en [`docs/00-plan/reparto-trabajo.md`](docs/00-plan/reparto-trabajo.md) y calendario en [`cronograma.md`](docs/00-plan/cronograma.md).
+Las tareas están en **Issues** de GitHub, en 3 hitos (Sprint 1 Fundaciones · Sprint 2 Evaluación · Sprint 3 Cierre), etiquetadas por dueño (`owner/*`), fase (`fase/*`), tipo (`infra`, `cloudflare`, `pentest`, `ops`, `informe`) y estado (`estado/en-curso`, `estado/bloqueado`, `estado/revision`).
+
+**Empieza por [`docs/00-plan/plan-de-trabajo.md`](docs/00-plan/plan-de-trabajo.md)**: ahí está la lista ordenada de cada quien, con dependencias y criterio de cierre. Asignación en [`reparto-trabajo.md`](docs/00-plan/reparto-trabajo.md) y calendario en [`cronograma.md`](docs/00-plan/cronograma.md).
 
 ## Reglas del juego
 
