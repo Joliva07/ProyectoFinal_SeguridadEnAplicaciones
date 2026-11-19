@@ -37,12 +37,12 @@ AuroraShop es una tienda en línea (WordPress + WooCommerce) desplegada en conte
 | Integrante | Rol | Componente de rúbrica | Acceso exclusivo |
 |---|---|---|---|
 | James Maradiaga | Lead Security Architect · borde e integración | 5. Informe técnico & APA | Cloudflare (zona `ancordss.me.uk`) |
-| Javier Oliva | Gobierno de activos y riesgo | 1. Análisis de riesgos y activos | — |
-| Josue | Cloud architecture & DevSecOps | 2. Arquitectura Cloud & DevSecOps | — |
+| Javier Oliva | Gobierno de activos y riesgo | 1. Análisis de riesgos y activos | Cuenta GCP y facturación |
+| Josue | Cloud architecture & DevSecOps | 2. Arquitectura Cloud & DevSecOps | Repositorio GitHub (owner) |
 | Horacio | Ciberdefensa y hardening del CMS | 3. Implementación de ciberdefensa | — |
 | Arun | Operaciones de seguridad y mitigación | 4. Implementación de ciberseguridad | — |
 
-Todos con acceso a Google Cloud y Claude. **Solo James opera Cloudflare**; los cambios se piden por issue con etiqueta `cloudflare` (SLA 24 h).
+Todos con acceso a Google Cloud y Claude. **James opera Cloudflare**, **Javier administra la cuenta GCP y los accesos** y **Josue es dueño del repositorio**. Los cambios de borde se piden por issue con etiqueta `cloudflare` (SLA 24 h).
 
 ## Mapa del repositorio
 

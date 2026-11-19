@@ -4,10 +4,10 @@
 
 | Persona | Usuario | Rol | Estado |
 |---|---|---|---|
-| James | `Ancordss` | Admin | listo |
-| Javier | `Joliva07` | Admin (owner) | listo |
+| Josue | `Joliva07` | **Owner del repositorio** (lo creó) | listo |
+| James | `Ancordss` | Write (borde, SIEM, informe) | listo |
 | Horacio | `Horacio935` | Write | listo |
-| Josue | — | Write | **pendiente: falta usuario** |
+| Javier | — | Write | **pendiente: falta usuario** |
 | Arun | — | Write | **pendiente: falta usuario** |
 
 Invitación (solo James o Javier):
@@ -26,9 +26,9 @@ Proyecto: `aurorashop-sec-umg`. Región: `us-central1` (GKE Autopilot zonal/regi
 
 | Persona | Rol en el proyecto | Justificación |
 |---|---|---|
-| James | `roles/owner` (bootstrap) → `roles/resourcemanager.projectIamAdmin` + break-glass | Único con escritura manual y facturación |
-| Javier | `roles/viewer`, `roles/bigquery.dataViewer`, `roles/cloudsql.viewer` | Consulta de datos para inventario y matriz |
-| Josue | `roles/viewer`, `roles/logging.viewer`, `roles/monitoring.viewer` | Lee estado; despliega **solo por CI** con `sa-gh-deployer` |
+| Javier | `roles/billing.admin` (cuenta) + `roles/owner` (proyecto) | **Dueño de la cuenta GCP y la facturación**; único que otorga accesos |
+| James | `roles/viewer` + break-glass temporal bajo solicitud a Javier | Opera Cloudflare; no necesita escritura permanente en GCP |
+| Josue | `roles/viewer`, `roles/logging.viewer`, `roles/monitoring.viewer` | Owner del repo; despliega **solo por CI** con `sa-gh-deployer` |
 | Horacio | `roles/viewer`, `roles/artifactregistry.reader` | Descarga imágenes para pruebas locales |
 | Arun | `roles/viewer`, `roles/logging.viewer`, `roles/monitoring.viewer`, `roles/bigquery.dataViewer` | SIEM, Falco y dashboards |
 
@@ -38,7 +38,7 @@ Nadie recibe `roles/editor` ni claves JSON. Pipeline con Workload Identity Feder
 - Condición WIF: `assertion.repository == "Joliva07/ProyectoFinal_SeguridadEnAplicaciones"` y `assertion.ref == "refs/heads/main"`.
 - `sa-gke-workload` con `roles/cloudsql.client`, `roles/storage.objectViewer` (bucket media) y `roles/secretmanager.secretAccessor` (secretos `aurorashop-*`).
 
-### 2.2 Checklist de bootstrap (James)
+### 2.2 Checklist de bootstrap (Javier, con James para el borde)
 
 - [ ] Proyecto, facturación, alertas en 20 y 40 USD.
 - [ ] APIs: `container`, `sqladmin`, `artifactregistry`, `secretmanager`, `cloudkms`, `iamcredentials`, `compute`, `logging`, `monitoring`, `bigquery`, `securitycenter`, `cloudresourcemanager`.
@@ -48,7 +48,8 @@ Nadie recibe `roles/editor` ni claves JSON. Pipeline con Workload Identity Feder
 - [ ] Secret Manager: `db-password`, `auth-keys`, `salts`, `payment-sandbox`.
 - [ ] Buckets: `aurorashop-media` (privado, CMEK), `aurorashop-backups`, `aurorashop-logs-archive`; uniform access, sin `allUsers`.
 - [ ] Etiquetas `proyecto=aurorashop`, `ambiente`, `curso=seguridad-apps`.
-- [ ] Invitaciones IAM a los 4 integrantes.
+- [ ] Invitaciones IAM a los 4 integrantes (incluida la cuenta de facturación si aplica).
+- [ ] Otorgar a James acceso temporal de escritura solo durante el bootstrap y retirarlo después.
 
 ### 2.3 Cuentas demo
 

@@ -10,7 +10,7 @@ Regla de oro: **nadie documenta lo que no puede evidenciar.** Si un control no s
 
 | Integrante | Rol operativo | Componente de rúbrica (4 pts) | Construye |
 |---|---|---|---|
-| **James Maradiaga** | Lead Security Architect · borde e integración | 5. Informe técnico & APA | Zona Cloudflare (DNS/TLS/WAF/Access/Logpush), IAM base, ensamblaje del informe, dictamen |
+| **James Maradiaga** | Lead Security Architect · borde e integración | 5. Informe técnico & APA | Zona Cloudflare (DNS/TLS/WAF/Access/Logpush), ensamblaje del informe, dictamen |
 | **Javier Oliva** | Gobierno de activos y riesgo | 1. Análisis de riesgos y activos | Catálogo y pedidos sintéticos, cuentas demo, export de matrices |
 | **Josue** | Cloud architecture & DevSecOps | 2. Arquitectura Cloud & DevSecOps | Terraform, GKE + manifiestos, imagen CI, pipeline, Cloud SQL, evaluación de contenedores |
 | **Horacio** | Ciberdefensa y hardening del CMS | 3. Implementación de ciberdefensa | Imagen WordPress endurecida, configuración del CMS, pentest, revisión de plugins/temas |
@@ -49,7 +49,9 @@ R = ejecuta · A = responde · C = consultado · I = informado
 **Componente:** 5. Informe técnico & formato APA (4 pts).
 
 **Construye**
-- Proyecto GCP, facturación, APIs (GKE, Cloud SQL, GCS, KMS, Secret Manager, Artifact Registry, Cloud Armor), IAM base y Workload Identity Federation.
+- Zona Cloudflare completa: DNS de los 3 hosts, TLS, WAF, rate limiting, Access, Turnstile, Logpush.
+- Reglas de enfrentamiento, ventana de pentest y verificación técnica del borde.
+- **No** administra la cuenta GCP: eso es de Javier.
 - Zona Cloudflare: los 3 subdominios, TLS 1.3/Strict, HSTS, WAF gestionado + reglas custom (spec de Arun), rate limiting, bot management, Access en `admin` y `staging`, Turnstile en login/checkout, Logpush a GCS/BigQuery.
 - Reglas de enfrentamiento, ventana de pentest, presupuesto y teardown.
 
@@ -114,7 +116,7 @@ R = ejecuta · A = responde · C = consultado · I = informado
 **Definición de terminado**
 - `terraform apply` reproducible desde cero; GKE privado sin API pública; Pod Security `restricted` aplicado; 0 CRITICAL con fix en Trivy; pipeline bloquea secretos y despliega por WIF; tienda responde por `aurorashop.ancordss.me.uk`.
 
-**Depende de:** proyecto GCP de James (día 1), imagen y configuración de Horacio.
+**Depende de:** proyecto GCP y accesos otorgados por Javier (día 1), imagen y configuración de Horacio.
 **Riesgo propio:** es la ruta crítica; si GKE se atrasa, plan B es Cloud Run para la demo (se documenta la diferencia).
 
 ---
@@ -171,12 +173,12 @@ R = ejecuta · A = responde · C = consultado · I = informado
 
 | Recurso | James | Javier | Josue | Horacio | Arun |
 |---|---|---|---|---|---|
-| GitHub | admin (Ancordss) | admin (Joliva07) | write (pendiente) | write (Horacio935) | write (pendiente) |
-| GCP `aurorashop-sec-umg` | Owner + billing | Viewer + BigQuery Viewer | Viewer + Logs Viewer (deploy vía CI) | Viewer + Artifact Reader | Viewer + Logs/Monitoring Viewer |
+| GitHub | write (Ancordss) | write (pendiente) | **owner (Joliva07)** | write (Horacio935) | write (pendiente) |
+| GCP `aurorashop-sec-umg` | Viewer + break-glass temporal | **Owner + billing (cuenta GCP)** | Viewer + Logs Viewer (deploy vía CI) | Viewer + Artifact Reader | Viewer + Logs/Monitoring Viewer |
 | Cloudflare | **Admin (único)** | — | — | — | — |
 | Claude | sí | sí | sí | sí | sí |
 
-Pendiente: usuarios de GitHub de **Josue** y **Arun**, y correos para sus cuentas GCP.
+Pendiente: usuarios de GitHub de **Javier** y **Arun**. La cuenta GCP y los accesos ya los administra Javier.
 
 ## 6. Coordinación
 
