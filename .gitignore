@@ -16,6 +16,8 @@ service-account*.json
 *.tfplan
 crash.log
 override.tf
+infra/backend.hcl
+infra/terraform.tfvars
 
 # WordPress / PHP
 cms/**/vendor/

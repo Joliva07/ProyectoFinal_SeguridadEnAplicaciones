@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: aurorashop
+resources:
+  - ../../base
+  - ingress.yaml
+  - backendconfig.yaml
+  - secrets.yaml
+configMapGenerator:
+  - name: aurorashop-config
+    literals:
+      - DB_NAME=aurorashop_demo
+      - DB_USER=sa-gke-workload-demo
+      - WP_ENVIRONMENT_TYPE=production
+generatorOptions:
+  disableNameSuffixHash: true

@@ -1,0 +1,17 @@
+{
+  "name": "aurorashop/cms-runtime",
+  "description": "Runtime contract for AuroraShop PHP dependencies.",
+  "type": "project",
+  "require": {
+    "php": "^8.3"
+  },
+  "config": {
+    "platform": {
+      "php": "8.3.0"
+    },
+    "sort-packages": true,
+    "secure-http": true
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}

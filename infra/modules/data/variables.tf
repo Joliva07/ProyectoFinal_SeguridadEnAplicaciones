@@ -1,0 +1,10 @@
+variable "project_id" { type = string }
+variable "project_number" { type = string }
+variable "region" { type = string }
+variable "environment" { type = string }
+variable "name_prefix" { type = string }
+variable "network_id" { type = string }
+variable "private_ip_range" { type = string }
+variable "labels" { type = map(string) }
+variable "database_tier" { type = string }
+variable "database_disk_gb" { type = number }

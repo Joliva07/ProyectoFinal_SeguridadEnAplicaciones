@@ -1,61 +1,50 @@
 # Contenedores y Kubernetes
 
-Dueños: **Josue** (hardening y evaluación) · Revisión: Arun · Componente de rúbrica 2 y sección 3.7/4.5 del informe
+Dueño: **Josue** (contrato de imagen, despliegue y hardening) · Revisión: Arun · Componente 2.
 
-## 1. Imagen del CMS
+> Estado: manifiestos y pipeline preparados. La imagen de CMS es una dependencia de Horacio y no existe todavía en `cms/docker/`; por eso no hay reporte Trivy ni ejecución de rollout.
 
-| Aspecto | Requisito | Verificación |
+## 1. Contrato de la imagen
+
+El job `container` espera que Horacio entregue `cms/docker/Dockerfile` con los targets `php-runtime` y `nginx-runtime`. La imagen final debe cumplir:
+
+| Control | Requisito | Evidencia al completar la imagen |
 |---|---|---|
-| Base | `php:8.3-fpm-alpine` o distroless equivalente, digest fijado | `docker inspect` |
-| Etapas | Multi-stage: build de composer/npm fuera de la imagen final | `docker history` |
-| Usuario | UID 10001, sin root | `id` dentro del contenedor |
-| Escritura | Root FS de solo lectura; `emptyDir` para `uploads` si aplica | `docker run --read-only` |
-| Herramientas | Sin `curl`, `bash`, `git`, `composer` en la imagen final | `trivy` + `which` |
-| Versiones | WordPress y WooCommerce fijados por versión; plugins con versión exacta | `composer.lock` / Dockerfile |
-| Secretos | Ninguno en capas; `wp-config.php` generado al arrancar desde Secret Manager | `docker history` |
-| Puertos | Solo 9000 (FPM); Nginx como sidecar o contenedor separado | manifiesto |
-| Salud | `readinessProbe`/`livenessProbe` en `/healthz` | manifiesto |
+| Base | PHP-FPM 8.3 Alpine endurecido y Nginx reducido | digest y SBOM |
+| Etapas | Composer/npm/build tools fuera de los targets finales | `docker history` + inspección de paquetes |
+| Usuario | UID/GID 10001 para PHP y Nginx no root | `docker run --rm <imagen> id` |
+| FS | Sin escritura en root; solo volúmenes temporales declarados | prueba con `--read-only` |
+| Secretos | Ningún secreto o `wp-config.php` con credenciales en capas | `docker history --no-trunc` + escáner |
+| Versiones | WordPress, WooCommerce, plugins y bibliotecas fijados | locks e inventario del Dockerfile |
+| Salud | `/healthz` atendido por Nginx en puerto 8080 | probe/HTTP smoke |
+| Vulnerabilidades | 0 CRITICAL con fix en cada imagen | JSON de Trivy archivado |
 
-## 2. Clúster y workloads
+Los nombres de destino se publican como `wordpress-php` y `wordpress-nginx` en Artifact Registry, con tag del commit para trazabilidad y digest para el manifiesto.
 
-| Control | Implementación | Evidencia |
+## 2. GKE y pods
+
+| Control | Configuración preparada | Comprobación posterior |
 |---|---|---|
-| Autopilot | Sin administración de nodos; hardening del pod | `gcloud container clusters describe` |
-| API privada | `enable_private_endpoint`, authorized networks | Salida de gcloud |
-| Pod Security | `restricted` en el namespace | `kubectl get ns aurorashop -o yaml` |
-| NetworkPolicy | deny-all ingress/egress + allow MySQL, GCS, DNS | `kubectl get networkpolicy` |
-| Workload Identity | `iam.gke.io/gcp-service-account` en la SA de K8s | manifiesto |
-| RBAC | SA con `get/list/watch` en su namespace; CI con `edit` acotado | `kubectl auth can-i --list` |
-| Recursos | requests/limits de CPU y memoria; HPA 2–6 | `kubectl describe hpa` |
-| Disponibilidad | PDB `minAvailable: 1`, 2 réplicas mínimas en demo | `kubectl get pdb` |
-| Admisión | Sin `privileged`, `hostPath`, `hostNetwork`; seccomp `RuntimeDefault` | manifiesto + kubesec |
-| Imágenes | Solo desde Artifact Registry; `imagePullPolicy: IfNotPresent`; digest | manifiesto |
+| Plano de control | GKE Autopilot privado; API sin IP pública | `gcloud container clusters describe` |
+| Acceso CI | WIF + GKE Connect Gateway + RBAC namespaced | `kubectl auth can-i --list` |
+| Admisión | PSA `restricted` en los tres namespaces | `kubectl get namespace --show-labels` |
+| Workload Identity | GSA diferente para dev, staging y demo; KSA sin token montado | revisar bindings y acceso a API |
+| Contenedor | non-root, seccomp RuntimeDefault, read-only FS, capabilities drop ALL | YAML renderizado + runtime |
+| Egress | NetworkPolicy deny-all con DNS, SQL, restricted APIs y metadata permitidos | conexión de prueba desde pod |
+| Entrada | GKE Ingress protegido por Cloud Armor; origen solo Cloudflare | request desde IP permitida/no permitida |
+| Secretos y medios | CSI de Secret Manager y GCS Fuse, IAM por ambiente | lectura/escritura autorizada |
+| Recursos | requests/limits y HPA 2–6; PDB `minAvailable: 1` | `kubectl get hpa,pdb` |
 
-## 3. Escaneo
+El ServiceAccount Workload Identity se instala una sola vez desde `infra/k8s/bootstrap/workload-serviceaccounts.yaml`; CI no recibe permiso para editarlo. Secretos TLS de Cloudflare son prerrequisito manual y quedan fuera del repositorio.
 
-| Herramienta | Objetivo | Umbral | Salida |
-|---|---|---|---|
-| Trivy | SO + librerías de la imagen | 0 CRITICAL con fix | tabla + JSON |
-| kubesec | Manifiestos | score ≥ 5 por workload | JSON |
-| Checkov | Manifiestos | sin HIGH/CRITICAL | SARIF |
-| `kubectl auth can-i` | RBAC efectivo | sin cluster-admin | captura |
+## 3. Automatización de análisis
 
-## 4. Evaluación del clúster (sección 3.7)
+- `Checkov` revisa Terraform y Kubernetes, con bloqueo HIGH/CRITICAL.
+- `tfsec` complementa el análisis Terraform heredado.
+- `Kubesec` analiza el YAML resultante de `kubectl kustomize` y conserva su JSON.
+- `Trivy` escanea las imágenes PHP y Nginx; el gate bloquea CRITICAL con fix disponible.
+- `kubectl rollout status` y `/shop`, `/my-account` validan la revisión desplegada; ZAP ejecuta baseline en el storefront demo.
 
-| # | Prueba | Método | Resultado esperado | Obtenido |
-|---|---|---|---|---|
-| 1 | API server expuesto | `nmap` al endpoint, `gcloud` describe | sin endpoint público | |
-| 2 | Pod privilegiado aceptado | aplicar manifiesto de prueba | rechazo por PSA | |
-| 3 | Tráfico lateral | `curl` desde el pod a otro namespace | bloqueado por NetworkPolicy | |
-| 4 | Token de SA montado | `ls /var/run/secrets` | ausente donde no se usa | |
-| 5 | Secretos en env | `kubectl describe pod` | sin valores sensibles | |
-| 6 | Imagen con CVE crítica | Trivy | 0 con fix | |
-| 7 | `kubectl exec` y auditoría | exec + log | registrado en Cloud Logging | |
-| 8 | Límites de recursos | `kubectl top`, HPA | sin OOM y escala | |
+## 4. Alcance de Autopilot
 
-> `kube-bench` no aplica al plano de control de Autopilot (gestionado). Se ejecuta sobre los manifiestos y se complementa con Security Command Center y la guía CIS GKE, declarando la limitación.
-
-## 5. Limitaciones declaradas
-
-- Autopilot impone muchas configuraciones de nodo: el informe separa lo que controla el equipo (pods, RBAC, red, admisión) de lo que controla Google (kernel, runtime, nodos).
-- Sin RuntimeClass alternativo ni nodos dedicados: no se evalúa aislamiento por hardware.
+El equipo controla imágenes, Pods, RBAC, NetworkPolicy, PSA y configuración de aplicación. Google administra nodos, kernel, runtime y el plano de control; no se atribuyen al equipo cambios sobre componentes gestionados. `kube-bench` no inspecciona nodos administrados de Autopilot; el análisis declarativo y la documentación de GKE CIS delimitan esa cobertura.

@@ -1,0 +1,15 @@
+flowchart LR
+    Customer[Cliente de AuroraShop]
+    Admin[Administrador]
+    Cloudflare[Cloudflare<br/>DNS · TLS · WAF · Access]
+    Shop[AuroraShop<br/>WordPress + WooCommerce]
+    GCP[Google Cloud<br/>GKE Autopilot · Cloud SQL · GCS]
+    GitHub[GitHub Actions<br/>DevSecOps con WIF]
+    Payment[Pasarela de pago sandbox]
+
+    Customer -->|HTTPS storefront y checkout| Cloudflare
+    Admin -->|HTTPS + Access/MFA| Cloudflare
+    Cloudflare -->|tráfico de borde| Shop
+    Shop -->|workload privado| GCP
+    Shop -->|API de pruebas| Payment
+    GitHub -->|imagen por digest y despliegue autenticado| GCP

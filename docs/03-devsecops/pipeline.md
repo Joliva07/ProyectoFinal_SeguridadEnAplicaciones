@@ -1,64 +1,61 @@
 # Pipeline CI/CD seguro
 
-Dueño: **Josue** · Componente de rúbrica 2 · Estado: especificación (implementación en `.github/workflows/` por Josue)
+Dueño: **Josue** · Componente de rúbrica 2 · Estado: workflows preparados; sin ejecución remota documentada.
 
-## 1. Objetivo
+## 1. Flujo
 
-Ningún artefacto llega a GKE sin pasar por secretos, SAST, SCA de plugins, contenedor, IaC y manifiestos; y el despliegue usa identidad federada, sin claves estáticas.
-
-## 2. Etapas
+La definición ejecutable está en `.github/workflows/security-ci.yml`; el plan y apply controlado de infraestructura está en `.github/workflows/terraform.yml`.
 
 ```mermaid
 flowchart LR
-    A["push / PR"] --> B["gitleaks"]
-    B --> C["Semgrep PHP<br/>+ PHPCS Security"]
-    C --> D["WPScan<br/>core · plugins · temas"]
-    D --> E["composer audit<br/>+ npm audit"]
-    E --> F["Checkov + tfsec<br/>Terraform + K8s"]
-    F --> G["Trivy imagen<br/>+ kubesec"]
-    G --> H["build & push<br/>Artifact Registry"]
-    H --> I{"¿main y<br/>todo verde?"}
-    I -->|no| X["bloquea"]
-    I -->|sí| J["deploy GKE<br/>WIF + kubectl"]
-    J --> K["ZAP baseline<br/>+ smoke"]
-    K --> L["evidencia → artifact"]
+    A[PR a main] --> B[Gitleaks]
+    B --> C[Semgrep PHP]
+    C --> D[Composer audit + Checkov/tfsec/Kubesec]
+    D --> E[Build targets PHP/Nginx]
+    E --> F[Trivy CRITICAL con fix]
+    F -->|push main| G[Artifact Registry por digest]
+    G --> H[OIDC/WIF + GKE Connect Gateway]
+    H --> I[Rollout]
+    I --> J[HTTP smoke + ZAP baseline]
+    K[WPScan semanal/main] --> G
 ```
 
-| # | Job | Herramienta | Falla el build | Salida |
-|---|---|---|---|---|
-| 1 | `secrets` | gitleaks | sí, cualquier hallazgo | SARIF/JSON |
-| 2 | `sast` | Semgrep (`p/php`, `p/owasp-top-ten`, `p/secrets`) | sí en ERROR | SARIF |
-| 3 | `sca-cms` | WPScan (núcleo, plugins, tema) con token API | sí CVE ≥ 7.0 en componente en uso | JSON |
-| 4 | `sca-deps` | `composer audit`, `npm audit` | sí high/critical con fix | reporte |
-| 5 | `iac` | Checkov + tfsec (Terraform y manifiestos) | sí HIGH/CRITICAL | SARIF |
-| 6 | `container` | Trivy (`os,library`) + kubesec | sí CRITICAL con fix | tabla |
-| 7 | `build` | docker buildx + push a Artifact Registry (digest) | sí | imagen con SHA |
-| 8 | `deploy` | `google-github-actions/auth` (WIF) + `kubectl rollout` | sí | revisión desplegada |
-| 9 | `smoke` | ZAP baseline + `curl` a `/shop` y `/my-account` | sí 5xx o hallazgo alto | HTML |
+## 2. Gates implementados
 
-## 3. Reglas
+| Job | Herramienta | Falla el job | Salida |
+|---|---|---|---|
+| `secrets` | Gitleaks, historial completo | Cualquier secreto encontrado | SARIF |
+| `sast` | Semgrep PHP, OWASP Top 10 y secrets | Hallazgo marcado ERROR | SARIF |
+| `wpscan` | WPScan contra storefront activo | Token ausente, error de escaneo o CVSS ≥ 7.0 | JSON + resumen |
+| `sca-deps` | Composer audit; npm audit si existe lockfile JS | Vulnerabilidad de dependencias o lockfile faltante | JSON |
+| `iac` | Checkov, tfsec y Kubesec | Checkov HIGH/CRITICAL o tfsec HIGH/CRITICAL | SARIF/JSON |
+| `container` | Docker targets PHP/Nginx y Trivy | Falta Dockerfile/targets o CRITICAL con fix | JSON por imagen |
+| `publish` | Docker + Artifact Registry | Solo corre con todos los gates verdes en `main` | digest por imagen |
+| `deploy` | GitHub OIDC/WIF + GKE Connect Gateway | Falla apply de manifiestos o rollout | log de rollout |
+| `smoke` | `curl` y ZAP baseline | `/shop` o `/my-account` no responde 200; falla ZAP | HTML/JSON |
 
-- `pull_request` corre jobs 1–6; `push` a `main` corre todo.
-- `permissions: contents: read`; `id-token: write` solo en `deploy`.
-- Prohibido `pull_request_target` con checkout del PR (vector T-47). Toda acción de terceros pinneada por SHA (T-49).
-- Secretos de CI: `GCP_WIF_PROVIDER`, `GCP_SERVICE_ACCOUNT`, `WPSCAN_TOKEN`. Nada se imprime; `set -x` prohibido donde haya secretos.
-- Caché de dependencias permitido; caché de resultados de seguridad, no.
-- Reportes archivados 30 días y copiados a `evidencias/fase3/`.
-- Renovate/Dependabot semanal para plugins/composer; el merge a producción sigue siendo por PR con pipeline.
+Los pull requests ejecutan los análisis de código, dependencias e infraestructura y construyen/escanean imágenes. WPScan consulta el storefront desplegado, por eso corre en `push main`, ejecución manual y agenda semanal; no se presenta como análisis del código no desplegado del PR. Publicación y despliegue ocurren en `main` solamente. La agenda semanal actualiza el inventario WPScan sin republicar imágenes.
 
-## 4. Evidencia para la rúbrica
+## 3. Identidad y permisos
 
-| Criterio | Evidencia |
-|---|---|
-| SAST integrado | PR con hallazgo Semgrep en rojo y el mismo PR en verde tras el fix |
-| SCA de plugins | Tabla WPScan: plugin, versión, CVE, versión corregida, commit del bump |
-| SCA de dependencias | `composer audit` antes/después |
-| IaC + K8s | Checkov antes (N fallos) / después (0 altos), con el diff |
-| Contenedor | Trivy antes/después del cambio de base; kubesec |
-| Despliegue | Log del job con WIF + `kubectl rollout status` + digest de la imagen |
+- `contents: read` por defecto. `id-token: write` solo en publicación, despliegue y Terraform remoto.
+- GCP usa WIF; no se cargan claves JSON. `GCP_WIF_PROVIDER` y `GCP_SERVICE_ACCOUNT` pertenecen a la identidad de deploy creada por Javier. Terraform usa `TF_WIF_PROVIDER` y `TF_SERVICE_ACCOUNT` separados.
+- El deploy publica únicamente en Artifact Registry y llega al clúster por Connect Gateway; RBAC limita la identidad CI a los namespaces y recursos de aplicación.
+- `terraform.yml` ejecuta validación sin credenciales en PR; plan remoto en `main`; `apply` solo con `workflow_dispatch`, branch `main` y environment protegido `infra-apply`.
+- Acciones de GitHub están fijadas por SHA completo. Herramientas de análisis usan versiones fijadas en la imagen.
 
-## 5. Métricas
+## 4. Dependencias y preparación requerida
 
-- Tiempo total objetivo < 12 min (build de imagen incluido).
-- Falsos positivos documentados por herramienta; cada supresión con comentario y justificación.
-- Fallo por infraestructura se reintenta; fallo por hallazgo se corrige, no se reintenta.
+- Javier configura el bucket remoto y la variable `TF_STATE_BUCKET`; WIF de plan/apply y deploy; secretos WIF y el environment `infra-apply` con aprobador.
+- Añadir `WPSCAN_TOKEN` como secreto y mantener publicada la URL demo para el análisis vivo.
+- Horacio debe entregar `cms/docker/Dockerfile` con targets `php-runtime` y `nginx-runtime`; el job de contenedor falla de forma explícita hasta que exista.
+- El checkout PHP tiene un manifiesto runtime mínimo. Horacio debe compartir las bibliotecas PHP y JavaScript que realmente use para agregarlas a Composer/npm y generar locks; no se inventan paquetes.
+- El bootstrap de GKE, namespaces, RBAC, Workload Identity y certificado TLS de Cloudflare deben existir antes del primer despliegue.
+
+## 5. Evidencia
+
+Los reportes de cada ejecución se conservan 30 días como artifacts de GitHub Actions. Para el informe deben descargarse y registrarse con ID de ejecución en `evidencias/fase3/`; este repositorio todavía no contiene resultados de scans ni logs de despliegue. No se atribuyen conteos de hallazgos sin ejecución.
+
+## 6. Riesgo y criterio de cierre
+
+Un análisis en rojo se corrige o se triagea con evidencia; no se vuelve a ejecutar para ocultar el hallazgo. El tiempo objetivo es menor a 12 minutos una vez que existan las imágenes, el endpoint demo y los accesos. La política de rama debe exigir los checks de CI y una revisión PR; no se documenta como activa hasta que GitHub confirme el cambio.
