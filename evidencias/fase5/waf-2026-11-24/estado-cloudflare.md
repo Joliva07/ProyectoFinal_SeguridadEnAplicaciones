@@ -35,6 +35,7 @@ Limitaciones del plan Free: 5 reglas custom, sin acción `log`, sin regex. W-04/
 
 - `GET /certificates?zone_id=…` funciona (0 certificados), pero `POST /certificates` devuelve `1016 User is not authorized`.
 - Clave y CSR generados localmente en `~/.aurorashop-origin/` (permisos 600), con SANs de los tres hosts. El certificado se emite en el dashboard o con un token de Origin CA: Edit.
+- Certbot 5.10 + plugin DNS de Cloudflare: `--dry-run` contra Let's Encrypt staging **exitoso** (DNS-01 resuelve y limpia TXT). La emisión real devuelve HTTP 503 `urn:ietf:params:acme:error:rateLimited` ("Service busy; retry later") en `/acme/authz/...`; hay que esperar la ventana de rate limit y reintentar.
 
 ## Bloqueos
 
