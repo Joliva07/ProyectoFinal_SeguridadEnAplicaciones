@@ -21,6 +21,8 @@ Certificado Origin CA con SANs de los tres hosts, válido hasta 2041, instalado 
 | Archivo sensible | `curl .../.env` | 403 WAF |
 | PHP en uploads | `curl .../wp-content/uploads/x.php` | 403 WAF |
 | Editor de plugins | `curl .../wp-admin/plugin-editor.php` | 403 WAF |
+| Rate limit login | 3 GET a `/wp-login.php` en <10 s | 502, 502, **429** |
+| Método TRACE | `curl -X TRACE .../` | 405 (bloqueado por el edge) |
 | Staging XML-RPC | `curl https://staging-aurorashop.../xmlrpc.php` | 403 WAF (sin backend) |
 
 WAF custom (5 reglas) y Cloudflare Managed Free Ruleset habilitados el 2026-11-25, acotados por `http.host` a los tres nombres.
