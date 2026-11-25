@@ -8,23 +8,23 @@ Especifica: **Arun** · Aplica: **James** (único con Cloudflare) · Componente 
 
 | Capa | Producto | Función | Estado |
 |---|---|---|---|
-| 1 | Cloudflare Managed Free Ruleset | Payloads conocidos | **Staged, disabled** (2026-11-24) |
-| 2 | Reglas custom Cloudflare | Lógica de WordPress/WooCommerce | **5 reglas staged, disabled** |
+| 1 | Cloudflare Managed Free Ruleset | Payloads conocidos | **Activo** (2026-11-25) |
+| 2 | Reglas custom Cloudflare | Lógica de WordPress/WooCommerce | **5 reglas activas** |
 | 3 | Rate limiting | Fuerza bruta, card testing, scraping | Pendiente: token sin scope de rate limits |
 | 4 | Bot management / Turnstile | Automatización en login y checkout | Pendiente: configurar en dashboard |
 | 5 | Cloud Armor | Segunda línea en el LB | Pendiente: `terraform apply` |
 | 6 | Cloudflare Access | Admin y staging fuera de Internet | Pendiente: token sin acceso a la organización Zero Trust |
 
-### 1.1 Estado aplicado el 2026-11-24
+### 1.1 Estado aplicado el 2026-11-25
 
-La zona `ancordss.me.uk` (plan Free) tenía WAF apagado: sin entrypoint en `http_request_firewall_custom` ni `http_request_firewall_managed`. Se dejó preparado, **deshabilitado**, para no bloquear tráfico antes de que exista el origen y se validen falsos positivos:
+La zona `ancordss.me.uk` (plan Free) tenía WAF apagado. El 2026-11-25 se habilitaron el entrypoint custom y el Managed Free Ruleset, acotados por `http.host` a los tres nombres de AuroraShop:
 
-| Objeto | ID | Reglas |
+| Objeto | ID | Estado |
 |---|---|---|
-| Ruleset custom | `f9b9aafd842f45da8159d31757d5e3df` | W-01, W-03, W-04, W-05, W-06 (todas `enabled=false`) |
-| Ruleset managed | `94b1cdbe2d234721aa23e13be15d359e` | Cloudflare Managed Free Ruleset (`enabled=false`) |
+| Ruleset custom | `f9b9aafd842f45da8159d31757d5e3df` | W-01/W-03/W-04/W-05/W-06 `enabled=true` |
+| Ruleset managed | `94b1cdbe2d234721aa23e13be15d359e` | Cloudflare Managed Free Ruleset `enabled=true` |
 
-Ambos están limitados por expresión a `aurorashop.ancordss.me.uk`, `admin.aurorashop.ancordss.me.uk` y `staging.aurorashop.ancordss.me.uk`, para no afectar los otros 28 hosts de la zona. Al existir el Ingress y pasar el smoke test, se habilitan con `PATCH` del ruleset; no se activan antes.
+Pruebas: `/` 200, `/xmlrpc.php` 403, `/wp-json/wp/v2/users` 403, `/.env` 403, uploads `.php` 403, editor de plugins 403. Evidencia en `evidencias/fase5/waf-2026-11-24/edge-tests.md`.
 
 ## 2. Reglas custom
 

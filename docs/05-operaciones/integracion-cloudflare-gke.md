@@ -41,7 +41,7 @@ Los nombres son subdominios de `ancordss.me.uk`, así que **son registros A prox
 
 TTL `Auto`. No crear registros `AAAA` hasta que el LB tenga IPv6; un `AAAA` sin destino rompe clientes con IPv6 preferente.
 
-Estado 2026-11-24: la zona tiene 29 registros, ninguno para `aurorashop`, `admin.aurorashop` ni `staging.aurorashop`. No se crean hasta que `terraform apply` devuelva `ingress_ip` y `staging_ingress_ip`; apuntar a una IP provisional solo produce 521/522.
+Estado 2026-11-25: 32 registros en la zona; los tres de AuroraShop están proxied (`aurorashop`/`admin-aurorashop` → `34.8.197.115`, `staging-aurorashop` → `136.68.90.143`). Los nombres anidados antiguos se eliminaron porque el plan Free no emite certificado de edge para dos niveles.
 
 Verificación:
 
@@ -63,7 +63,7 @@ openssl req -new -newkey rsa:2048 -nodes \
   -keyout aurorashop-origin.key \
   -out aurorashop-origin.csr \
   -subj "/CN=aurorashop.ancordss.me.uk" \
-  -addext "subjectAltName=DNS:aurorashop.ancordss.me.uk,DNS:admin.aurorashop.ancordss.me.uk,DNS:staging.aurorashop.ancordss.me.uk"
+  -addext "subjectAltName=DNS:aurorashop.ancordss.me.uk,DNS:admin-aurorashop.ancordss.me.uk,DNS:staging-aurorashop.ancordss.me.uk"
 ```
 
 1. Emitir el certificado en Cloudflare → SSL/TLS → Origin Server → Create Certificate con el CSR y vigencia de 15 años.
@@ -83,7 +83,7 @@ done
 
 El Ingress referencia `secretName: aurorashop-origin-tls`; si el Secret no existe, el balanceador queda sin certificado y Cloudflare responde 526. El orden es: aplicar Terraform → crear Secrets → aplicar overlay.
 
-Estado 2026-11-24: el token actual puede leer Origin CA pero no emitir (`1016 User is not authorized`). La clave y el CSR están generados localmente con SANs de los tres hosts; el certificado se emite en el dashboard o con un token que tenga Origin CA: Edit. No se guardó ninguna clave en Git.
+Estado 2026-11-25: Origin CA emitido por API (válido hasta 2041) con SANs `aurorashop.ancordss.me.uk`, `admin-aurorashop.ancordss.me.uk` y `staging-aurorashop.ancordss.me.uk`; instalado como `aurorashop-origin-tls` en ambos namespaces. El token ya tiene `Origin CA: Edit`.
 
 ## 4. Origen cerrado
 
@@ -109,8 +109,8 @@ Solo en `admin.aurorashop` y `staging.aurorashop` (el storefront queda público)
 
 | Aplicación | Política | Sesión | Notas |
 |---|---|---|---|
-| `admin.aurorashop.ancordss.me.uk` | Allow correos del equipo + `require` 2FA del IdP | 8 h | No usar Bypass en `/wp-login.php` |
-| `staging.aurorashop.ancordss.me.uk` | Allow correos del equipo | 8 h | Igual que demo para pruebas |
+| `admin-aurorashop.ancordss.me.uk` | Allow correos del equipo + `require` 2FA del IdP | 8 h | No usar Bypass en `/wp-login.php` |
+| `staging-aurorashop.ancordss.me.uk` | Allow correos del equipo | 8 h | Igual que demo para pruebas |
 
 Pasos: Zero Trust → Access → Applications → Self-hosted → añadir hostname → política Allow por lista de correos → login method One-time PIN o IdP del curso. El DNS debe estar proxied; Access no funciona en gris.
 
@@ -218,14 +218,14 @@ Sin el paso del certificado, el Ingress queda en 526; sin DNS proxied, Cloud Arm
 | Control | Estado | Bloqueo |
 |---|---|---|
 | Infra Terraform | **Aplicada**: GKE, Cloud SQL, buckets, KMS, AR, secretos, Cloud Armor | — |
-| DNS de los 3 hosts | **3/3 proxied** | Origen aún sin Ingress |
-| Origin CA | Clave y CSR listos; certificado no emitido | Token sin Origin CA: Edit |
-| WAF custom | 5 reglas staged, `enabled=false` | Falta origen para smoke test |
-| Managed Free Ruleset | Staged, `enabled=false` | Falta origen para smoke test |
+| DNS de los 3 hosts | **3/3 proxied** con nombres de un nivel | App sin imagen (#40) |
+| Origin CA | **Emitido** (2041) e instalado | — |
+| WAF custom | 5 reglas staged, `enabled=false` | Falta smoke test con app real |
+| Managed Free Ruleset | Staged, `enabled=false` | Falta smoke test con app real |
 | Access | 0 aplicaciones | Token sin organización Zero Trust |
 | Logpush | Ownership validado; job no disponible (`1004`, plan Free) | Requiere plan con Logpush |
-| SSL/TLS/HSTS | Sin verificar | Token sin Zone Settings: Read/Edit |
+| SSL/TLS/HSTS | Full/strict y HSTS pendientes de Zone Settings | Token sin Zone Settings: Edit |
 
-IPs: demo/admin `34.8.197.115`; staging `136.68.90.143`. Cloud SQL privado `10.40.0.3`. El resto de hosts de la zona no se tocó.
+IPs: demo/admin `34.8.197.115`; staging `136.68.90.143`. Los nombres anidados `admin.aurorashop`/`staging.aurorashop` se retiraron: Cloudflare Free no cubre dos niveles con Universal SSL.
 
 La zona es **Free**: 5 reglas custom, sin acción `log` ni regex, y Managed Free Ruleset en lugar de OWASP CRS completo. Estas limitaciones se declaran en el informe; lo que no cubre el plan se compensa en Cloud Armor (#38) y en la aplicación.

@@ -1,23 +1,23 @@
-# Estado de Cloudflare — 2026-11-24
+# Estado de Cloudflare — 2026-11-25
 
 Zona: `ancordss.me.uk` (`d7ab4dfd85ce67a4e3273ae07d402e8b`), plan **Free**, cuenta `1b45d5e5a5b93bb6e781126413b2b567`.
-Token con permisos de DNS, WAF/rulesets, Logpush y Access (lectura); sin Zone Settings ni Origin CA: Edit. No se registra el token.
+Token con permisos de DNS, WAF/rulesets, Logpush y Origin CA; sin Zone Settings ni administración de Zero Trust. No se registra el token.
 
 ## DNS
 
-- 32 registros: los 29 previos más los tres de AuroraShop, proxied a las IPs del LB (`34.8.197.115` demo/admin, `136.68.90.143` staging).
-- Permiso de escritura verificado con `PATCH` a un ID inexistente: `81044 Record does not exist` (no `9109`), es decir, el token puede crear registros.
+- 32 registros; los tres de AuroraShop son proxied: `aurorashop` y `admin-aurorashop` → `34.8.197.115`; `staging-aurorashop` → `136.68.90.143`.
+- Los nombres anidados `admin.aurorashop` y `staging.aurorashop` se retiraron: Universal SSL de Free no cubre dos niveles.
 
 ## WAF
 
-La zona no tenía entrypoint de WAF. Se dejó preparado y **deshabilitado**:
+Entrypoint custom y Managed Free Ruleset **habilitados** el 2026-11-25:
 
 | Objeto | ID | Detalle |
 |---|---|---|
-| Ruleset custom | `f9b9aafd842f45da8159d31757d5e3df` | W-01 `42ac529e…`, W-03 `2f15df51…`, W-04 `2123f018…`, W-05 `ca9cd268…`, W-06 `87b0d648…`; todas `enabled=false` |
-| Ruleset managed | `94b1cdbe2d234721aa23e13be15d359e` | Cloudflare Managed Free Ruleset `77454fe2…`; `enabled=false` |
+| Ruleset custom | `f9b9aafd842f45da8159d31757d5e3df` | W-01/W-03/W-04/W-05/W-06 `enabled=true` |
+| Ruleset managed | `94b1cdbe2d234721aa23e13be15d359e` | Cloudflare Managed Free Ruleset `77454fe2…`; `enabled=true` |
 
-Ambas expresiones están limitadas a los tres hosts de AuroraShop para no tocar los otros 28 nombres de la zona.
+Pruebas: `/` 200, `/xmlrpc.php` 403, `/wp-json/wp/v2/users` 403, `/.env` 403, uploads `.php` 403, editor de plugins 403. Detalle en `edge-tests.md`.
 
 Limitaciones del plan Free: 5 reglas custom, sin acción `log`, sin regex. W-04/W-06 usan `contains`; W-02/W-07/W-10 dependen de rate limiting; W-09 se resuelve con Access; W-11/W-12 quedan fuera de la cuota o del ruleset gratuito.
 
@@ -46,4 +46,4 @@ Limitaciones del plan Free: 5 reglas custom, sin acción `log`, sin regex. W-04/
 
 ## Estado del origen
 
-`terraform apply` completó GKE/Cloud SQL/buckets/Cloud Armor y el DNS ya resuelve a Cloudflare. Las peticiones a `aurorashop.ancordss.me.uk` devuelven 525 porque el LB aún no tiene Ingress ni certificado; `admin`/`staging` no completan TLS por la misma causa.
+`terraform apply` completó GKE/Cloud SQL/buckets/Cloud Armor. Con el cert Origin CA y los Ingress nuevos, el borde responde: `/` 200 con el backend temporal, WAF 403 en las rutas bloqueadas y 403 de Cloud Armor al origen directo. Los Deployments reales vuelven a estar aplicados pero no arrancan hasta que existan las imágenes de #40 y versiones en Secret Manager.

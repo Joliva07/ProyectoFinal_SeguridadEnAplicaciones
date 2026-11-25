@@ -32,7 +32,7 @@ Regla: nada fuera de Cloudflare/LB acepta tráfico de Internet; el pod no acepta
 | `/wp-content/uploads/*` | Media | — | imágenes, PDFs | upload shell | sin ejecución PHP |
 | `/wp-content/plugins/*/readme.txt` | Metadatos | — | versión | fingerprint | WAF + sin exposición |
 | `/?author=1` | Enumeración | — | usuarios | fuerza bruta dirigida | bloqueado en WAF |
-| `staging.aurorashop...` | Réplica | Access | todo | pruebas sobre datos | Access + `noindex` |
+| `staging-aurorashop...` | Réplica | Access | todo | pruebas sobre datos | Access + `noindex` |
 | Ingress IP / `*.run.app` n.a. | Origen | — | app | bypass de WAF | solo rangos Cloudflare |
 | GKE API | Control | IAM | clúster | control total | endpoint privado |
 | `checkout/order-received` | Post-compra | sesión | pedidos ajenos | IDOR | verificación de propiedad |
