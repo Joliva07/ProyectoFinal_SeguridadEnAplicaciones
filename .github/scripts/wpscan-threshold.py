@@ -53,6 +53,12 @@ def main() -> int:
         print(f"No se pudo leer el reporte WPScan: {error}", file=sys.stderr)
         return 2
 
+    # Falla cerrado: un escaneo abortado (token invalido, cuota agotada, WAF) no prueba nada.
+    if not isinstance(report, dict) or report.get("scan_aborted"):
+        reason = report.get("scan_aborted") if isinstance(report, dict) else "reporte inesperado"
+        print(f"WPScan no completó el escaneo: {reason}", file=sys.stderr)
+        return 1
+
     findings = find_high_findings(report)
     if findings:
         print("WPScan encontró vulnerabilidades con CVSS >= 7.0:")
