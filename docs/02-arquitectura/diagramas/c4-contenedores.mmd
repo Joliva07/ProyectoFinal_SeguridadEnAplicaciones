@@ -1,0 +1,29 @@
+flowchart TB
+    Browser[Navegador]
+    CF[Cloudflare<br/>DNS · TLS · WAF · Access]
+    LB[Global HTTPS Load Balancer<br/>GKE Ingress + Cloud Armor]
+    subgraph GKE[GKE Autopilot · clúster privado]
+      subgraph NS[Namespaces dev · staging · aurorashop]
+        Nginx[Nginx<br/>UID no root · FS de solo lectura]
+        PHP[PHP-FPM<br/>WordPress + WooCommerce]
+        Proxy[Cloud SQL Auth Proxy<br/>IAM DB Authentication]
+        Secrets[Secret Manager CSI]
+        Fuse[GCS Fuse CSI]
+      end
+    end
+    SQL[(Cloud SQL MySQL<br/>IP privada · CMEK)]
+    Media[(GCS media<br/>privado · CMEK)]
+    KMS[Cloud KMS]
+    Logs[Cloud Logging → BigQuery]
+    Registry[Artifact Registry]
+    CI[GitHub Actions<br/>OIDC/WIF + Connect Gateway]
+
+    Browser --> CF --> LB --> Nginx --> PHP
+    PHP --> Proxy --> SQL
+    PHP --> Secrets
+    PHP --> Fuse --> Media
+    SQL --- KMS
+    Media --- KMS
+    GKE --> Logs
+    CI -->|publica por digest| Registry --> GKE
+    CI -->|deploy al API privado| GKE

@@ -1,0 +1,6 @@
+project_id       = "aurorashop-sec-umg"
+region           = "us-central1"
+environment      = "demo"
+name_prefix      = "aurorashop"
+database_tier    = "db-custom-1-3840"
+database_disk_gb = 10

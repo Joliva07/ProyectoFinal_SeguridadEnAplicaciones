@@ -1,0 +1,26 @@
+sequenceDiagram
+    actor Cliente
+    participant CF as Cloudflare
+    participant LB as GKE Ingress + Cloud Armor
+    participant N as Nginx
+    participant WP as WordPress/WooCommerce
+    participant SQLP as Cloud SQL Auth Proxy
+    participant SQL as Cloud SQL MySQL
+    participant Pay as Pasarela sandbox
+    participant Logs as Cloud Logging
+
+    Cliente->>CF: HTTPS · carrito y checkout
+    CF->>CF: TLS, WAF, rate limit y bot controls
+    CF->>LB: solicitud desde rango Cloudflare
+    LB->>LB: allowlist y reglas WAF administradas
+    LB->>N: Ingress al servicio
+    N->>WP: solicitud PHP por red interna del pod
+    WP->>SQLP: conexión local con identidad de workload
+    SQLP->>SQL: token IAM efímero por IP privada
+    SQL-->>SQLP: resultado de lectura
+    SQLP-->>WP: carrito e inventario
+    WP->>Pay: autorización sandbox
+    Pay-->>WP: resultado de autorización
+    WP->>SQLP: registra pedido e idempotencia
+    WP->>Logs: evento estructurado sin datos de tarjeta
+    WP-->>Cliente: confirmación del pedido

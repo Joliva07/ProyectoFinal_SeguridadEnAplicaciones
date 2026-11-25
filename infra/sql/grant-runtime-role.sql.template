@@ -1,0 +1,21 @@
+-- Ejecutar una vez por Javier con el usuario administrador de MySQL, después de que
+-- Terraform cree la instancia, las bases y los usuarios IAM del workload.
+-- Este template cubre los tres ambientes; no subir dumps ni credenciales.
+CREATE ROLE IF NOT EXISTS 'aurorashop_runtime_dev';
+GRANT SELECT, INSERT, UPDATE, DELETE ON `aurorashop_dev`.* TO 'aurorashop_runtime_dev';
+GRANT 'aurorashop_runtime_dev' TO 'sa-gke-workload-dev'@'%';
+SET DEFAULT ROLE 'aurorashop_runtime_dev' TO 'sa-gke-workload-dev'@'%';
+
+CREATE ROLE IF NOT EXISTS 'aurorashop_runtime_staging';
+GRANT SELECT, INSERT, UPDATE, DELETE ON `aurorashop_staging`.* TO 'aurorashop_runtime_staging';
+GRANT 'aurorashop_runtime_staging' TO 'sa-gke-workload-staging'@'%';
+SET DEFAULT ROLE 'aurorashop_runtime_staging' TO 'sa-gke-workload-staging'@'%';
+
+CREATE ROLE IF NOT EXISTS 'aurorashop_runtime_demo';
+GRANT SELECT, INSERT, UPDATE, DELETE ON `aurorashop_demo`.* TO 'aurorashop_runtime_demo';
+GRANT 'aurorashop_runtime_demo' TO 'sa-gke-workload-demo'@'%';
+SET DEFAULT ROLE 'aurorashop_runtime_demo' TO 'sa-gke-workload-demo'@'%';
+
+-- El rol runtime no incluye CREATE/ALTER/INDEX/DROP. La instalación inicial
+-- de WordPress y las migraciones de esquema requieren un proceso separado,
+-- temporal y aprobado antes del primer despliegue.

@@ -1,52 +1,89 @@
-# Hardening de Infraestructura como Código y manifiestos
+# Hardening de IaC y manifiestos
 
-Dueño: **Josue** · Herramientas: Checkov + tfsec + kubesec · Componente de rúbrica 2 y fase 5
+Dueño: **Josue** · Herramientas: Checkov, tfsec, Kubesec y Terraform validate.
 
-## 1. Controles mínimos (Terraform)
+> Estado: configuración de controles preparada; aún sin plan, aplicación ni resultados de scanners. No se presentan conteos before/after sin reporte.
 
-| Control | Regla típica | Configuración esperada |
+## 1. Controles en Terraform
+
+| Control | Implementación en `infra/` | Evidencia requerida |
 |---|---|---|
-| Bucket sin acceso público | CKV_GCP_29 / CKV_GCP_114 | `uniform_bucket_level_access = true`, sin `allUsers` |
-| Cloud SQL sin IP pública | CKV_GCP_6 | `ipv4_enabled = false` + `private_network` |
-| Cifrado con CMEK | CKV_GCP_83 | `encryption_key_name` en SQL y buckets |
-| Backups habilitados | CKV_GCP_27 | `backup_configuration.enabled = true` |
-| GKE sin endpoint público | CKV_GCP_25 / GKE private cluster | `enable_private_endpoint = true` + `master_authorized_networks` |
-| Sin SA con roles amplios | CKV_GCP_49 | roles específicos, sin `owner`/`editor` |
-| Logging de auditoría | CKV_GCP_2 / audit config | `audit_config` en servicios críticos |
-| Etiquetas | política propia | `proyecto`, `ambiente`, `curso` |
+| Datos privados | Cloud SQL sin IPv4 pública; VPC y Private Service Access | `terraform plan` y describe posterior |
+| Cifrado | CMEK en Cloud SQL, buckets, logs y secretos; rotación 90 días | plan y configuración efectiva |
+| Acceso de buckets | Uniform bucket-level access, PAP, versionado y sin IAM público | Checkov + IAM efectivo |
+| Red | Subred privada, NAT, flow logs y rangos secundarios GKE | plan + revisión de firewall/egress |
+| GKE | Autopilot privado, endpoint privado, Workload Identity, sin certificado cliente | plan y `gcloud describe` |
+| Origen web | Cloud Armor filtra rangos oficiales Cloudflare y aplica SQLi/XSS administrado | regla activa + prueba desde Cloudflare/origen |
+| IAM | GSA separada por ambiente; bucket/Secret Manager acotado por recurso | IAM policy + Connect Gateway |
+| Auditoría | Sink a BigQuery y retención de 90 días | salida del sink y muestra redactada |
+| Estado | Backend GCS remoto; fuera del repositorio | metadata/versionado del bucket |
 
-## 2. Controles mínimos (Kubernetes)
+Checkov aplica umbral HIGH/CRITICAL a Terraform y a los manifiestos **renderizados** de los tres overlays; escanear el YAML base sin renderizar produce falsos positivos de namespace y de probes. `terraform.yml` corre `fmt -check`, `init -backend=false` y `validate` sin acceso cloud en PR; el plan remoto usa WIF después de merge a `main`.
 
-| Control | Regla | Configuración esperada |
-|---|---|---|
-| Pod Security | CKV_K8S_* / PSA | namespace con `pod-security.kubernetes.io/enforce: restricted` |
-| Non-root | CKV_K8S_6 / K8S_23 | `runAsNonRoot: true`, `runAsUser: 10001` |
-| Root FS de solo lectura | CKV_K8S_22 | `readOnlyRootFilesystem: true` + `emptyDir` para lo volátil |
-| Sin privilegios | CKV_K8S_16 / K8S_1 | `allowPrivilegeEscalation: false`, `privileged: false`, `drop: ["ALL"]` |
-| Seccomp | K8S_20 | `seccompProfile: RuntimeDefault` |
-| Sin `hostPath`/`hostNetwork` | CKV_K8S_28 | prohibido en el namespace |
-| Token de SA no montado si no se usa | K8S_36 | `automountServiceAccountToken: false` salvo necesidad |
-| Límites de recursos | CKV_K8S_11/12/13 | requests y limits definidos |
-| Imagen por digest | política | `image@sha256:...`, no `:latest` |
-| NetworkPolicy | política | deny-all + allow a MySQL/GCS/DNS |
+## 2. Controles Kubernetes
 
-## 3. Evidencia antes/después
+| Control | Manifiesto |
+|---|---|
+| PSA `restricted` | Labels en namespaces `dev`, `staging` y `aurorashop` |
+| Proceso no root | UID/GID 10001 para app; proxy con UID 65532 |
+| FS y privilegios | `readOnlyRootFilesystem`, `allowPrivilegeEscalation: false`, sin capabilities |
+| Seccomp | `RuntimeDefault` |
+| Tokens | `automountServiceAccountToken: false`; Workload Identity vinculado durante bootstrap |
+| Recursos | Requests/limits de CPU, memoria y almacenamiento efímero |
+| Red | deny-all y allowlist DNS, Cloud SQL, APIs restringidas y metadata necesaria |
+| Persistencia | GCS Fuse CSI con bucket distinto por ambiente |
+| Secretos | Secret Manager CSI; sin valores dentro de Git ni RBAC CI para Secrets |
+| CI RBAC | Role por namespace para Deployment, Service, HPA, PDB, NetworkPolicy, CSI e Ingress donde aplica |
 
-1. Correr Checkov + tfsec + kubesec sobre el estado inicial y guardar `evidencias/fase5/iac-antes/`.
-2. Corregir el código (no silenciar reglas).
-3. Correr de nuevo y guardar `evidencias/fase5/iac-despues/`.
-4. Tabla comparativa obligatoria:
+Kubesec produce JSON sobre los manifiestos renderizados por `kubectl kustomize` (un archivo por overlay); Checkov escanea esos mismos archivos y el Terraform, no el YAML base sin renderizar. La validación en vivo de RBAC, NetworkPolicy, PSA y endpoints requiere el clúster.
 
-| Regla | Severidad | Antes | Después | Cambio aplicado |
-|---|---|---|---|---|
-| CKV_GCP_6 | HIGH | 1 | 0 | IP privada + conector |
-| CKV_K8S_22 | MEDIUM | 2 | 0 | `readOnlyRootFilesystem` |
-| CKV_K8S_16 | HIGH | 2 | 0 | `allowPrivilegeEscalation: false` |
+## 3. Reglas de estado y evidencia
 
-## 4. Reglas de trabajo
+- El state no se commitea. `infra/backend.hcl` y `infra/terraform.tfvars` están ignorados; el state usa bucket GCS de Javier.
+- Plan y apply corren en GitHub Actions con WIF. Apply manual de `main` requiere environment `infra-apply` configurado con aprobación.
+- La salida del plan puede mostrar recursos y datos sensibles; debe guardarse con acceso controlado, sin subir `tfplan` binario a artifacts públicos.
+- Las excepciones a Checkov incluyen ID de regla, justificación, owner y fecha de vencimiento. No se silencia para lograr un score.
 
-- El estado de Terraform vive en GCS versionado con bloqueo; nunca en el repo.
-- `terraform apply` solo desde el pipeline (WIF). El bootstrap inicial lo aplica Javier (dueño de la cuenta GCP) una vez y documenta la salida; después nadie aplica a mano.
-- Los manifiestos se generan/validan con `kustomize build` o `helm template` antes del apply; lo que no está en el repo no existe en el clúster.
-- `kubectl apply` manual queda prohibido; el break-glass se registra como incidente en `tratamiento-riesgo.md`.
-- Las excepciones a una regla de Checkov se documentan con `#checkov:skip=<ID>:<razón>` y fecha de revisión.
+### 3.2 Excepciones vigentes (inline Semgrep/tfsec)
+
+| Herramienta | Regla | Justificación | Owner |
+|---|---|---|---|
+| Semgrep | `gcp-cloud-storage-logging` | El bucket sumidero de access logs no puede registrarse a sí mismo sin recursión; el resto de buckets sí registran | Josue |
+| Semgrep | `gcp-sql-database-ssl-insecure-value-postgres-mysql` | Cloud SQL Auth Proxy con IAM usa TLS sin certificado de cliente; `ssl_mode=ENCRYPTED_ONLY` exige cifrado | Josue |
+| tfsec | `AVD-GCP-0061` | Endpoint privado sin IP pública; authorized networks no aplica | Josue |
+| tfsec | `AVD-GCP-0047` | Autopilot usa PSA/PodSecurity, no PSP | Josue |
+| tfsec | `AVD-GCP-0048` | Autopilot administra el metadata server; Workload Identity está activo | Josue |
+| tfsec | `AVD-GCP-0007` | Cloudflare exige `objectAdmin` solo en el bucket de logs para el ownership challenge | Josue |
+| tfsec | `AVD-GCP-0015` | Mismo caso que la regla de Semgrep de SQL: proxy IAM + `ENCRYPTED_ONLY` | Josue |
+
+Cada supresión está en la línea del recurso o atributo con `# nosemgrep:` o `#tfsec:ignore:<ID>:<motivo>`; no se usa un archivo global que oculte el resto de hallazgos.
+
+### 3.3 Excepciones vigentes (`.checkov.yaml`)
+
+| Regla | Justificación | Owner | Vence |
+|---|---|---|---|
+| `CKV_GCP_69` | Autopilot habilita el metadata server; no es configurable por el equipo | Josue | 2026-12-15 |
+| `CKV_GCP_13` | Autopilot no emite certificados de cliente; el campo no es configurable | Josue | 2026-12-15 |
+| `CKV_GCP_12` | Dataplane V2 de Autopilot aplica NetworkPolicy; los manifiestos la declaran explícita | Josue | 2026-12-15 |
+| `CKV_GCP_20` | Endpoint privado sin IP pública; authorized networks no aplica | Josue | 2026-12-15 |
+| `CKV_GCP_65` | RBAC con IAM + Connect Gateway; Google Groups no aplica | Josue | 2026-12-15 |
+| `CKV_GCP_61` | Flow logs activos en la subred; intranode visibility no aplica a Dataplane V2 | Josue | 2026-12-15 |
+| `CKV_GCP_6` | `ssl_mode = ENCRYPTED_ONLY`; el check no evalúa ese campo | Josue | 2026-12-15 |
+| `CKV2_GCP_20` | MySQL habilita PITR con `binary_log_enabled`; el check busca el flag de PostgreSQL | Josue | 2026-12-15 |
+| `CKV2_GCP_18` | VPC personalizada sin red default | Josue | 2026-12-15 |
+| `CKV_GCP_66` | Binary Authorization exige política y aprobaciones; riesgo aceptado para el alcance del curso | Josue | 2026-12-15 |
+| `CKV_GCP_62` | Todos los buckets registran acceso; el bucket sumidero no puede registrarse a sí mismo sin recursión | Josue | 2026-12-15 |
+| `CKV_K8S_43` | CI sustituye el tag por digest antes de aplicar; el tag `local` es placeholder | Josue | 2026-12-15 |
+| `CKV_K8S_15` | `IfNotPresent` es correcto con imagen fijada por digest | Josue | 2026-12-15 |
+
+- `evidencias/fase3/iac/` recibe JSON/SARIF de la ejecución real, y tabla comparativa completada con los reportes.
+
+## 4. Resultados
+
+| Scanner | Antes | Después | Estado |
+|---|---:|---:|---|
+| Checkov | Pendiente | Pendiente | No ejecutado |
+| tfsec | Pendiente | Pendiente | No ejecutado |
+| Kubesec | Pendiente | Pendiente | No ejecutado |
+
+La resolución solo se marca después de ejecutar los scanners contra el mismo commit antes y después del hardening.

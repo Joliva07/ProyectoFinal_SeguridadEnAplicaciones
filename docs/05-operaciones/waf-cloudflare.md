@@ -2,16 +2,29 @@
 
 Especifica: **Arun** · Aplica: **James** (único con Cloudflare) · Componente de rúbrica 4
 
+> Integración con GKE (DNS, Origin CA, Access, Logpush, IP real): [`integracion-cloudflare-gke.md`](integracion-cloudflare-gke.md).
+
 ## 1. Capas
 
 | Capa | Producto | Función | Estado |
 |---|---|---|---|
-| 1 | Cloudflare Managed Rules (OWASP CRS) | Payloads conocidos, paranoia 2 | por aplicar |
-| 2 | Reglas custom Cloudflare | Lógica de WordPress/WooCommerce | por aplicar |
-| 3 | Rate limiting | Fuerza bruta, card testing, scraping | por aplicar |
-| 4 | Bot management / Turnstile | Automatización en login y checkout | por aplicar |
-| 5 | Cloud Armor | Segunda línea en el LB | por aplicar |
-| 6 | Cloudflare Access | Admin y staging fuera de Internet | por aplicar |
+| 1 | Cloudflare Managed Free Ruleset | Payloads conocidos | **Activo** (2026-11-25) |
+| 2 | Reglas custom Cloudflare | Lógica de WordPress/WooCommerce | **5 reglas activas** |
+| 3 | Rate limiting | Fuerza bruta, card testing, scraping | Pendiente: token sin scope de rate limits |
+| 4 | Bot management / Turnstile | Automatización en login y checkout | Pendiente: configurar en dashboard |
+| 5 | Cloud Armor | Segunda línea en el LB | Pendiente: `terraform apply` |
+| 6 | Cloudflare Access | Admin y staging fuera de Internet | Pendiente: token sin acceso a la organización Zero Trust |
+
+### 1.1 Estado aplicado el 2026-11-25
+
+La zona `ancordss.me.uk` (plan Free) tenía WAF apagado. El 2026-11-25 se habilitaron el entrypoint custom y el Managed Free Ruleset, acotados por `http.host` a los tres nombres de AuroraShop:
+
+| Objeto | ID | Estado |
+|---|---|---|
+| Ruleset custom | `f9b9aafd842f45da8159d31757d5e3df` | W-01/W-03/W-04/W-05/W-06 `enabled=true` |
+| Ruleset managed | `94b1cdbe2d234721aa23e13be15d359e` | Cloudflare Managed Free Ruleset `enabled=true` |
+
+Pruebas: `/` 200, `/xmlrpc.php` 403, `/wp-json/wp/v2/users` 403, `/.env` 403, uploads `.php` 403, editor de plugins 403. Evidencia en `evidencias/fase5/waf-2026-11-24/edge-tests.md`.
 
 ## 2. Reglas custom
 
@@ -19,18 +32,20 @@ Especifica: **Arun** · Aplica: **James** (único con Cloudflare) · Componente 
 |---|---|---|---|---|
 | W-01 | Bloquear XML-RPC | `http.request.uri.path eq "/xmlrpc.php"` | block | R-06 |
 | W-02 | Proteger login | `http.request.uri.path eq "/wp-login.php" and rate(1m) > 10` | block 10 min | R-06 |
-| W-03 | Bloquear enumeración REST | `http.request.uri.path eq "/wp-json/wp/v2/users" and not cf.threat_score lt 10` | block | R-07 |
-| W-04 | Bloquear archivos sensibles | `http.request.uri.path matches "(?i)(\\.env|\\.git|\\.bak|\\.sql|debug\\.log|wp-config\\.php\\.)"` | block | R-09 |
+| W-03 | Bloquear enumeración REST | `http.request.uri.path contains "/wp-json/wp/v2/users"` | block | R-07 |
+| W-04 | Bloquear archivos sensibles | `path contains "/.env" or "/.git" or ".sql" or "wp-config.php." or "debug.log"` | block | R-09 |
 | W-05 | Sin PHP en uploads | `http.request.uri.path contains "/wp-content/uploads/" and http.request.uri.path contains ".php"` | block | R-08 |
-| W-06 | Editor y mods de plugins | `http.request.uri.path matches "/wp-admin/(plugin|theme)-editor\\.php"` | block | R-04 |
+| W-06 | Editor y mods de plugins | `path contains "/wp-admin/plugin-editor.php" or path contains "/wp-admin/theme-editor.php"` | block | R-04 |
 | W-07 | Proteger checkout | `http.request.uri.path contains "/checkout" and rate(1m) > 5` | managed_challenge | R-16 |
 | W-08 | Cuerpo grande en API | `http.request.body.size > 1048576 and http.request.uri.path contains "/wp-json/"` | block | R-15 |
-| W-09 | Admin solo via Access | `http.request.uri.path contains "/wp-admin/" and not cf.access` | block | R-20 |
+| W-09 | Admin solo via Access | política de Cloudflare Access en `admin.`; no expresable en WAF | block en Access | R-20 |
 | W-10 | Scraping de catálogo | `rate(1m) > 120` | managed_challenge | R-16 |
 | W-11 | Métodos no usados | `http.request.method in {"TRACE" "TRACK" "CONNECT"}` | block | R-18 |
 | W-12 | Exploits de plugins conocidos | reglas CRS + firmas de CVE en la ventana | block | R-01 |
 
 Toda regla arranca en **log** 24 h, se revisan falsos positivos y luego pasa a **block**. El cambio se registra con fecha y resultado.
+
+> Plan Free: el límite es **5 reglas custom**, sin acción `log` y sin regex. W-04/W-06 se implementaron con `contains`; W-02/W-07/W-10 dependen de rate limiting (no staged); W-09 se resuelve con Access; W-11/W-12 quedan fuera de la cuota y del ruleset gratuito. Las reglas desplegadas se activan solo después del smoke test del origen.
 
 ## 3. Rate limiting
 

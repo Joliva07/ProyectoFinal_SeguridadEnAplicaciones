@@ -27,8 +27,8 @@ AuroraShop es una tienda en línea (WordPress + WooCommerce) desplegada en conte
 | Host | Destino | Protección |
 |---|---|---|
 | `aurorashop.ancordss.me.uk` | Storefront + checkout (Ingress GKE) | WAF gestionado + CRS + rate limit + Turnstile |
-| `admin.aurorashop.ancordss.me.uk` | `wp-admin` y REST de administración | Cloudflare Access (Zero Trust) + MFA |
-| `staging.aurorashop.ancordss.me.uk` | Réplica de pruebas para pentest | Access + `noindex` |
+| `admin-aurorashop.ancordss.me.uk` | `wp-admin` y REST de administración | Cloudflare Access (Zero Trust) + MFA |
+| `staging-aurorashop.ancordss.me.uk` | Réplica de pruebas para pentest | Access + `noindex` |
 
 > No hay subdominio de API separado: WooCommerce expone `/wp-json/wc/v3/*` en el mismo host y se protege con reglas propias.
 

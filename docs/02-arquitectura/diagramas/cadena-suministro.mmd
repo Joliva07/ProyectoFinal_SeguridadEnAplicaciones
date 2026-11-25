@@ -1,0 +1,18 @@
+flowchart LR
+    PR[Pull request]
+    Secrets[Gitleaks]
+    SAST[Semgrep]
+    SCA[Composer/npm audit<br/>WPScan]
+    IaC[Checkov + tfsec<br/>Kubesec]
+    Image[Build targets PHP/Nginx]
+    Trivy[Trivy<br/>0 CRITICAL con fix]
+    Publish[Artifact Registry<br/>digest inmutable]
+    WIF[GitHub OIDC → WIF]
+    Gateway[GKE Connect Gateway]
+    Deploy[Rollout en GKE]
+    Smoke[ZAP baseline + HTTP smoke]
+
+    PR --> Secrets --> SAST --> SCA --> IaC --> Image --> Trivy
+    Trivy -->|solo main y gates verdes| Publish
+    WIF --> Gateway --> Deploy
+    Publish --> Deploy --> Smoke

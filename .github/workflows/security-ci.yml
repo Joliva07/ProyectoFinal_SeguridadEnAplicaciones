@@ -1,0 +1,364 @@
+name: Security CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 8 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GCP_PROJECT_ID: aurorashop-sec-umg
+  GAR_LOCATION: us-central1
+  GAR_REPOSITORY: aurorashop
+  DEMO_URL: https://aurorashop.ancordss.me.uk
+
+jobs:
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Gitleaks
+        run: >-
+          docker run --rm
+          -v "${GITHUB_WORKSPACE}:/repo"
+          -w /repo
+          zricethezav/gitleaks:v8.30.1
+          git --redact --no-banner --report-format sarif --report-path /repo/gitleaks.sarif
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: gitleaks-report
+          path: gitleaks.sarif
+          retention-days: 30
+          if-no-files-found: ignore
+
+  sast:
+    name: SAST · Semgrep
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Semgrep PHP and OWASP rules
+        run: >-
+          docker run --rm
+          -e SEMGREP_IN_DOCKER=1
+          -v "${GITHUB_WORKSPACE}:/src"
+          -w /src
+          semgrep/semgrep:1.186.0
+          semgrep scan --config p/php --config p/owasp-top-ten --config p/secrets
+          --error --sarif --output /src/semgrep.sarif
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: semgrep-report
+          path: semgrep.sarif
+          retention-days: 30
+          if-no-files-found: ignore
+
+  wpscan:
+    name: SCA · WPScan live inventory
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Enumerate installed plugins and themes
+        env:
+          WPSCAN_TOKEN: ${{ secrets.WPSCAN_TOKEN }}
+        run: |
+          if [ -z "$WPSCAN_TOKEN" ]; then
+            echo "::error::Configura el secreto WPSCAN_TOKEN antes de ejecutar WPScan."
+            exit 1
+          fi
+          mkdir -p reports
+          docker run --rm \
+            -v "${GITHUB_WORKSPACE}/reports:/reports" \
+            wpscanteam/wpscan:v4.1.0 \
+            --url "$DEMO_URL" --enumerate vp,vt \
+            --api-token "$WPSCAN_TOKEN" --format json \
+            --output /reports/wpscan.json
+          python .github/scripts/wpscan-threshold.py reports/wpscan.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: wpscan-report
+          path: reports/wpscan.json
+          retention-days: 30
+          if-no-files-found: ignore
+
+  sca-deps:
+    name: SCA · Composer and npm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install verified Composer release and audit lockfile
+        working-directory: cms
+        run: |
+          curl --fail --silent --show-error --location \
+            https://getcomposer.org/download/2.11.3/composer.phar \
+            --output "$RUNNER_TEMP/composer.phar"
+          echo "04f8b003da4e3a2459056591fbfebd02b4dc3e5adeb158616b90cf55a65113ec  $RUNNER_TEMP/composer.phar" | sha256sum --check
+          count=$(python3 -c 'import json; d=json.load(open("composer.lock")); print(len(d.get("packages", [])) + len(d.get("packages-dev", [])))')
+          if [ "$count" -eq 0 ]; then
+            echo "::notice::composer.lock no declara dependencias todavía; la auditoría se activa cuando el CMS las agregue."
+            printf '{"advisories":[],"abandoned":[],"packages":0}\n' > composer-audit.json
+            exit 0
+          fi
+          docker run --rm \
+            -v "${GITHUB_WORKSPACE}/cms:/app" \
+            -v "$RUNNER_TEMP/composer.phar:/tmp/composer.phar:ro" \
+            -w /app php:8.3-cli-alpine \
+            php /tmp/composer.phar audit --locked --format=json > composer-audit.json
+      - name: Audit JavaScript dependencies when a lockfile exists
+        run: |
+          if [ -f cms/package.json ]; then
+            if [ ! -f cms/package-lock.json ]; then
+              echo "::error::cms/package.json requiere cms/package-lock.json para SCA reproducible."
+              exit 1
+            fi
+            cd cms
+            npm ci --ignore-scripts
+            npm audit --omit=dev --audit-level=high --json > npm-audit.json
+          fi
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: dependency-reports
+          path: |
+            cms/composer-audit.json
+            cms/npm-audit.json
+          retention-days: 30
+          if-no-files-found: ignore
+
+  iac:
+    name: IaC and Kubernetes scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Checkov Terraform
+        run: >-
+          docker run --rm
+          -v "${GITHUB_WORKSPACE}:/repo"
+          bridgecrew/checkov:3.3.27
+          --directory /repo/infra --framework terraform
+          --config-file /repo/.checkov.yaml
+          --soft-fail-on LOW,MEDIUM --hard-fail-on HIGH,CRITICAL
+          --output sarif --output-file-path /repo/checkov.sarif
+      - name: tfsec Terraform
+        run: >-
+          docker run --rm
+          -v "${GITHUB_WORKSPACE}:/repo"
+          aquasec/tfsec:v1.28.14
+          --minimum-severity HIGH --no-color /repo/infra
+      - name: Render manifests for each overlay
+        run: |
+          mkdir -p rendered
+          for overlay in dev staging demo; do
+            kubectl kustomize "infra/k8s/overlays/${overlay}" > "rendered/${overlay}.yaml"
+          done
+      - name: Checkov Kubernetes rendered manifests
+        run: >-
+          docker run --rm
+          -v "${GITHUB_WORKSPACE}:/repo"
+          bridgecrew/checkov:3.3.27
+          --directory /repo/rendered --framework kubernetes
+          --config-file /repo/.checkov.yaml
+          --soft-fail-on LOW,MEDIUM --hard-fail-on HIGH,CRITICAL
+      - name: Run Kubesec on rendered deployments
+        run: |
+          for overlay in dev staging demo; do
+            python3 - "$overlay" <<'PY'
+          import sys
+          overlay = sys.argv[1]
+          docs = open(f"rendered/{overlay}.yaml").read().split("\n---\n")
+          deployment = [doc for doc in docs if "\nkind: Deployment" in doc]
+          if len(deployment) != 1:
+              raise SystemExit(f"{overlay}: se esperaba 1 Deployment, hay {len(deployment)}")
+          open(f"rendered/{overlay}-deployment.yaml", "w").write(deployment[0])
+          PY
+            docker run --rm \
+              -v "${GITHUB_WORKSPACE}:/repo" \
+              kubesec/kubesec:v2.15.0 scan "/repo/rendered/${overlay}-deployment.yaml" \
+              > "kubesec-${overlay}.json"
+          done
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: iac-reports
+          path: |
+            checkov.sarif
+            kubesec-*.json
+            rendered/*.yaml
+          retention-days: 30
+          if-no-files-found: ignore
+
+  container:
+    name: Container scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Require Dockerfile targets supplied by CMS owner
+        run: |
+          if [ ! -f cms/docker/Dockerfile ]; then
+            echo "::error::Falta cms/docker/Dockerfile, entregable de Horacio; se esperan los targets php-runtime y nginx-runtime."
+            exit 1
+          fi
+      - name: Build hardened runtime targets
+        run: |
+          docker build --target php-runtime -t aurorashop-php:ci -f cms/docker/Dockerfile cms
+          docker build --target nginx-runtime -t aurorashop-nginx:ci -f cms/docker/Dockerfile cms
+      - name: Trivy PHP-FPM image
+        run: >-
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock
+          -v "${GITHUB_WORKSPACE}:/repo"
+          aquasec/trivy:0.76.2 image --scanners vuln
+          --severity CRITICAL --ignore-unfixed --exit-code 1
+          --format json --output /repo/trivy-php.json aurorashop-php:ci
+      - name: Trivy Nginx image
+        run: >-
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock
+          -v "${GITHUB_WORKSPACE}:/repo"
+          aquasec/trivy:0.76.2 image --scanners vuln
+          --severity CRITICAL --ignore-unfixed --exit-code 1
+          --format json --output /repo/trivy-nginx.json aurorashop-nginx:ci
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: trivy-reports
+          path: |
+            trivy-php.json
+            trivy-nginx.json
+          retention-days: 30
+          if-no-files-found: ignore
+
+  publish:
+    name: Build and push verified images
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    needs: [secrets, sast, sca-deps, iac, container, wpscan]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      php_image: ${{ steps.images.outputs.php_image }}
+      nginx_image: ${{ steps.images.outputs.nginx_image }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - name: Authenticate Docker to Artifact Registry
+        run: gcloud auth configure-docker "${GAR_LOCATION}-docker.pkg.dev" --quiet
+      - name: Build and push immutable image tags
+        id: images
+        run: |
+          registry="${GAR_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GAR_REPOSITORY}"
+          docker build --target php-runtime -t "$registry/wordpress-php:${GITHUB_SHA}" -f cms/docker/Dockerfile cms
+          docker build --target nginx-runtime -t "$registry/wordpress-nginx:${GITHUB_SHA}" -f cms/docker/Dockerfile cms
+          docker push "$registry/wordpress-php:${GITHUB_SHA}"
+          docker push "$registry/wordpress-nginx:${GITHUB_SHA}"
+          php_image=$(docker image inspect "$registry/wordpress-php:${GITHUB_SHA}" --format '{{index .RepoDigests 0}}')
+          nginx_image=$(docker image inspect "$registry/wordpress-nginx:${GITHUB_SHA}" --format '{{index .RepoDigests 0}}')
+          echo "php_image=$php_image" >> "$GITHUB_OUTPUT"
+          echo "nginx_image=$nginx_image" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    name: Deploy demo via Connect Gateway
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    needs: publish
+    runs-on: ubuntu-latest
+    environment: demo
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          project_id: ${{ env.GCP_PROJECT_ID }}
+      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          install_components: kubectl,gke-gcloud-auth-plugin
+      - name: Install Kustomize
+        run: go install sigs.k8s.io/kustomize/kustomize/v5@v5.7.1
+      - name: Connect to private GKE and deploy by digest
+        env:
+          PHP_IMAGE: ${{ needs.publish.outputs.php_image }}
+          NGINX_IMAGE: ${{ needs.publish.outputs.nginx_image }}
+        run: |
+          kustomize_bin="$(go env GOPATH)/bin"
+          echo "$kustomize_bin" >> "$GITHUB_PATH"
+          export PATH="$kustomize_bin:$PATH"
+          gcloud container fleet memberships get-credentials aurorashop-demo --project "$GCP_PROJECT_ID" --location global
+          cd infra/k8s/overlays/demo
+          kustomize edit set image "aurorashop-php=${PHP_IMAGE}" "aurorashop-nginx=${NGINX_IMAGE}"
+          kubectl apply -k .
+          kubectl rollout status deployment/aurorashop --namespace aurorashop --timeout=10m
+
+  smoke:
+    name: ZAP baseline and HTTP smoke
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check storefront routes
+        run: |
+          for path in /shop /my-account; do
+            status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' "$DEMO_URL$path")
+            if [ "$status" != "200" ]; then
+              echo "::error::${path} respondió HTTP ${status}; se esperaba 200."
+              exit 1
+            fi
+          done
+      - name: Create report directory
+        run: mkdir -p reports
+      - name: Run OWASP ZAP baseline
+        run: >-
+          docker run --rm
+          -v "${GITHUB_WORKSPACE}/reports:/zap/wrk/:rw"
+          zaproxy/zap-stable:2.17.0
+          zap-baseline.py -t "$DEMO_URL" -I -J zap-report.json -r zap-report.html
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: zap-smoke-reports
+          path: reports/
+          retention-days: 30
+          if-no-files-found: ignore

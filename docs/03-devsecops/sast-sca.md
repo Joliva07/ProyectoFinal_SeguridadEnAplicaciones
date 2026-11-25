@@ -1,60 +1,49 @@
 # SAST y SCA
 
-Dueño: **Josue** · Triaje: Arun · Componente de rúbrica 2
+Dueño: **Josue** · Triaje del CMS: Horacio · Revisión del triaje: Arun · Componente 2.
 
-## 1. SAST — Semgrep + PHPCS Security
+> Estado: reglas y automatización definidas. El repositorio aún no tiene plugin/tema PHP ni instancia publicada para producir hallazgos del producto. No se registran resultados inventados.
 
-| Aspecto | Definición |
-|---|---|
-| Alcance | `cms/plugin-aurora/**`, `cms/theme/**`, `cms/docker/**` |
-| Rulesets | `p/php`, `p/owasp-top-ten`, `p/secrets`, `p/dockerfile`, `p/terraform` |
-| Complemento | `phpcs` con `phpcs-security-audit` sobre el plugin propio |
-| Bloqueo | `ERROR` en PR; `WARNING` solo reporta |
-| Supresiones | `# nosemgrep: <regla> — <justificación>` + issue |
-| Evidencia | SARIF + `evidencias/fase3/sast-semgrep-<fecha>/` |
+## 1. SAST — Semgrep
 
-Hallazgos esperados y qué demostrar:
+`.github/workflows/security-ci.yml` ejecuta Semgrep contra `p/php`, `p/owasp-top-ten` y `p/secrets`; los hallazgos ERROR bloquean el gate. El reporte SARIF se guarda como artifact de la ejecución.
 
-| Regla | Riesgo | Demostración |
+Al integrarse el código de Horacio, el alcance esperado es `cms/plugin-aurora/**`, `cms/theme-aurora/**` y `cms/docker/**`. La revisión manual debe verificar como mínimo:
+
+| Riesgo | Revisión requerida | Control a buscar |
 |---|---|---|
-| Concatenación SQL | R-02 | antes: `$wpdb->query("... $id")`; después: `$wpdb->prepare` + test |
-| Salida sin escape | R-03 | antes: `echo $_GET['q']`; después: `esc_html()` |
-| Falta de nonce | R-04 | antes: `admin_post_` sin `check_admin_referer`; después: con nonce |
-| Upload sin validación | R-08 | antes: `move_uploaded_file` directo; después: MIME + extensión + destino fuera de webroot |
-| Secreto hardcodeado | R-19 | antes: API key en PHP; después: `getenv` desde Secret Manager |
-| `unserialize` de entrada | R-15 (T-15) | antes: `unserialize($_POST)`; después: `json_decode` con validación |
+| SQL injection | Consultas propias con variables | `$wpdb->prepare()` |
+| XSS | Salida de datos de usuario | `esc_html()`, `esc_attr()` o escape contextual |
+| CSRF | Acciones de administración y formularios | nonce + validación de capacidades |
+| Upload abusivo | Subida de contenido | MIME, extensión, tamaño y almacenamiento no ejecutable |
+| Secretos | Claves y credenciales | Secret Manager/runtime; nunca en código o capas |
+| Deserialización | Entrada externa | evitar `unserialize()` o usar estructura validada |
 
-## 2. SCA — tres frentes
+No añadir supresiones Semgrep sin regla, motivo, enlace de issue y revisión. Un hallazgo de SAST no confirmado se describe como observación de código, no como explotación comprobada.
 
-### 2.1 Plugins y temas (WPScan)
+## 2. SCA — dependencias PHP/JavaScript
 
-| Aspecto | Definición |
-|---|---|
-| Alcance | Núcleo WordPress, plugins instalados, tema hijo |
-| Comando | `wpscan --url <host> --enumerate vp,vt,u --api-token $WPSCAN_TOKEN -f json` |
-| Umbral | CVE con CVSS ≥ 7.0 en componente activo = falla |
-| Excepción | CVE sin fix y no alcanzable: aceptar con justificación y fecha |
-| Evidencia | JSON + tabla de triaje |
+`cms/composer.json` fija el contrato PHP del runtime (`^8.3`) y `composer.lock` permite reproducir la resolución. El gate descarga Composer 2.11.3 desde el origen oficial y verifica SHA-256 antes de ejecutar `composer audit --locked`. La lista real de bibliotecas debe completarse al recibir el Dockerfile/plugin de Horacio.
 
-### 2.2 Dependencias PHP/JS
+Si se añade `cms/package.json`, también debe entrar `cms/package-lock.json`; CI usa `npm ci --ignore-scripts` y `npm audit --omit=dev --audit-level=high`. No existe hoy manifiesto JS, por lo que ese subanálisis queda condicionado a que aparezcan dependencias.
 
-`composer audit` y `npm audit --omit=dev`; lockfiles obligatorios; sin `composer update` en producción.
+WPScan enumera plugins y temas instalados en el storefront activo en ejecuciones sobre `main`, manuales y semanales. `.github/scripts/wpscan-threshold.py` bloquea CVSS ≥ 7.0. El resultado no equivale a un análisis de una imagen o una rama de PR.
 
-### 2.3 Imagen base
+| Elemento | Fuente de versión | Estado observado |
+|---|---|---|
+| Núcleo WordPress | Imagen de Horacio / instalación | Pendiente: Dockerfile e instancia no están en el repo |
+| Plugins y tema | Instalación WooCommerce | Pendiente: sin inventario instalado |
+| Bibliotecas Composer | `composer.json` + `composer.lock` | Solo contrato PHP, sin paquetes PHP de aplicación |
+| Dependencias npm | `package.json` + `package-lock.json` | No hay manifest JS |
 
-Trivy sobre la imagen construida; ver `contenedores-k8s.md`.
+## 3. Triaje para el informe
 
-## 3. Tabla de triaje (obligatoria en el informe)
+| ID | Componente | Versión | CVE/regla | CVSS | Alcanzable | Decisión | Responsable | Evidencia |
+|---|---|---|---|---:|---|---|---|---|
+| — | — | — | — | — | — | Sin resultados ejecutados | — | Pendiente de CI |
 
-| ID | Componente | Versión | CVE/Regla | CVSS | ¿Alcanzable? | Decisión | Responsable |
-|---|---|---|---|---|---|---|---|
-| H-0X | plugin-ejemplo | 2.1.0 | CVE-2024-XXXX | 7.5 | sí (endpoint público) | actualizar a 2.1.3 | Horacio |
-| S-0X | theme/functions.php | — | semgrep:echo-unescaped | — | sí | corregir con `esc_html` | Horacio |
+Los hallazgos demostrados se registran como `H-NN`; observaciones SAST/SCA sin prueba de impacto como `S-NN`. Por cada CVE se anota versión corregida y commit de actualización. Las excepciones requieren motivo, responsable y fecha de revisión.
 
-Separar `H-` (vulnerabilidad demostrable) de `S-` (hallazgo de análisis) evita inflar el informe con falsos positivos.
+## 4. Coordinación
 
-## 4. Coordinación con la fase 4
-
-- Arun triaja y decide verdadero/falso positivo con evidencia de código o de ejecución.
-- Horacio confirma en la tienda desplegada (p. ej. que la subida de archivos realmente rechaza PHP).
-- Un hallazgo SAST no demostrable se documenta como "revisión de código", no como vulnerabilidad explotada.
+Horacio entrega las dependencias y la imagen del CMS; Josue integra el escaneo y automatiza el gate. Arun revisa falsos positivos y aceptación de riesgo. Los reportes originales se archivan en `evidencias/fase3/` después de que la CI ejecute.
