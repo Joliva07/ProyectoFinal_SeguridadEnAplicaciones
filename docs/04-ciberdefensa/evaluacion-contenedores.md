@@ -16,11 +16,11 @@ Targets PHP-FPM/Nginx del CMS, manifiestos por namespace, clúster GKE Autopilot
 | 2 | UID del proceso | `docker run --rm <imagen-php> id` | UID distinto de 0 | Pendiente: falta imagen |
 | 3 | Root filesystem | ejecutar target con `docker run --read-only` y volúmenes previstos | servicio inicia sin escribir en root | Pendiente: falta imagen |
 | 4 | Secretos en capas | `docker history --no-trunc <imagen>` + Gitleaks | sin tokens, claves ni credenciales | Pendiente: falta imagen |
-| 5 | PSA rechaza pod privilegiado | crear en namespace demo un pod de laboratorio con `privileged: true` | API rechaza por `restricted` | Local kind 2026-11-24: rechazado (`violates PodSecurity "restricted"`) |
-| 6 | Rechazo de `hostPath` | crear pod de laboratorio con `hostPath` | API rechaza por PSA | Local kind 2026-11-24: rechazado por tipo de volumen restringido |
-| 7 | Aislamiento de red | desde pod autorizado probar conexión a namespace no permitido y a SQL privado | el lateral falla; SQL solo por proxy/3306 | Local kind/Calico: lateral bloqueado y allow temporal funciona; SQL privado pendiente en GKE |
-| 8 | RBAC de despliegue | `kubectl auth can-i --list -n aurorashop` con la identidad CI | solo recursos de app; no Secrets, RBAC ni Namespace | Local kind 2026-11-24: solo app + lectura de pods/logs/events; Secrets, Roles y Namespaces denegados; sin comodines de recursos |
-| 9 | API privada y rollout | `gcloud ... clusters describe` + `kubectl rollout status` vía Connect Gateway | endpoint privado sin IP pública; rollout disponible | Pendiente: no hay clúster |
+| 5 | PSA rechaza pod privilegiado | crear en namespace demo un pod de laboratorio con `privileged: true` | API rechaza por `restricted` | Local kind 2026-11-24 y GKE 2026-11-24: rechazado (`violates PodSecurity "restricted"`) |
+| 6 | Rechazo de `hostPath` | crear pod de laboratorio con `hostPath` | API rechaza por PSA | Local kind y GKE 2026-11-24: rechazado por tipo de volumen restringido |
+| 7 | Aislamiento de red | desde pod autorizado probar conexión a namespace no permitido y a SQL privado | el lateral falla; SQL solo por proxy/3306 | Local kind/Calico: lateral bloqueado y allow temporal funciona; SQL privado pendiente de pod en GKE |
+| 8 | RBAC de despliegue | `kubectl auth can-i --list -n aurorashop` con la identidad CI | solo recursos de app; no Secrets, RBAC ni Namespace | Local kind y GKE 2026-11-24: solo app + lectura; Secrets/Roles/Namespaces denegados; sin comodines |
+| 9 | API privada y rollout | `gcloud ... clusters describe` + `kubectl rollout status` vía Connect Gateway | endpoint privado sin IP pública; rollout disponible | GKE 2026-11-24: endpoint privado `172.16.0.2`, público `35.232.148.113:443` sin respuesta; Connect Gateway funciona; rollout pendiente de imagen |
 | 10 | Capacidad y disponibilidad | `kubectl get hpa,pdb` y `kubectl top pods` | HPA 2–6, PDB minAvailable 1, sin uso sobre límites | Local kind 2026-11-24: HPA 2–6 y PDB 1 aceptados; `kubectl top` pendiente de metrics-server/GKE |
 
 ## 3. Registro de hallazgos
