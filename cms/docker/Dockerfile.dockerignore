@@ -1,0 +1,10 @@
+# Se aplica al build con -f cms/docker/Dockerfile (contexto cms/). Rutas relativas a cms/.
+# Nada de secretos ni archivos locales dentro del contexto de build.
+**/.env
+**/.env.*
+docker/env.example
+docker/compose.yaml
+**/*.md
+**/.git
+**/vendor
+**/node_modules

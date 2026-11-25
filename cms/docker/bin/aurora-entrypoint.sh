@@ -1,6 +1,6 @@
 #!/bin/sh
 # AuroraShop — entrypoint del contenedor PHP (issue #40)
-# 1. Genera /run/aurora/config.php (secretos desde env en local o Secret Manager en GKE).
+# 1. Genera config.php (secretos del CSI driver en GKE; de variables de entorno en local).
 # 2. Borra los secretos del entorno del proceso.
 # 3. Arranca PHP-FPM.
 set -eu
@@ -11,8 +11,8 @@ if [ "$(id -u)" = "0" ]; then
 fi
 
 umask 077
-# open_basedir propio del generador: su codigo, la salida y (modo files) el volumen CSI
-SECRETS_DIR="${AURORA_SECRETS_DIR:-/var/secrets/aurora}"
+# open_basedir propio del generador: su codigo, las salidas posibles y el volumen de secretos
+SECRETS_DIR="${AURORA_SECRETS_DIR:-${WP_SECRET_DIR:-/var/run/aurorashop-secrets}}"
 php -d open_basedir="/usr/local/lib/aurora/:/run/aurora/:/tmp/:${SECRETS_DIR%/}/" \
     /usr/local/lib/aurora/generate-config.php
 

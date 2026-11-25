@@ -2,20 +2,24 @@
 #
 # AuroraShop — imagen del CMS (issue #40)
 #
-# Dos imagenes finales desde un mismo Dockerfile (un pod = 2 contenedores):
-#   --target php    -> PHP-FPM 8.3 + WordPress + WooCommerce   (puerto 9000, solo localhost)
-#   --target nginx  -> Nginx con reglas de hardening           (puerto 8080)
+# Contexto de build: cms/   (asi lo construye .github/workflows/security-ci.yml)
+#   docker build --target php-runtime   -f cms/docker/Dockerfile cms
+#   docker build --target nginx-runtime -f cms/docker/Dockerfile cms
 #
-# Ambas corren como el usuario sin privilegios 10001 y el codigo es de solo lectura
-# (propiedad de root). Lo unico escribible es wp-content/uploads (volumen), /tmp y /run/aurora.
+# Dos imagenes finales = dos contenedores del Deployment infra/k8s/base/deployment.yaml:
+#   php-runtime    PHP-FPM 8.3 + WordPress + WooCommerce   (127.0.0.1:9000)
+#   nginx-runtime  Nginx con reglas de hardening           (8080)
+#
+# Ambas corren como 10001 con el codigo de solo lectura (propiedad de root). En el pod solo son
+# escribibles los emptyDir del Deployment (/tmp en php; /var/cache/nginx y /var/run en nginx)
+# y wp-content/uploads (bucket GCS por CSI).
 #
 # Etapas:
 #   plugins     descarga y verifica WooCommerce (curl/unzip solo aqui)
 #   wordpress   imagen oficial, solo como fuente del nucleo de WordPress
-#   app         arbol final de /srv/aurora con permisos ya aplicados
+#   app         arbol final de /var/www con permisos ya aplicados
 #   extensions  compila extensiones PHP (compiladores solo aqui)
-#   php         imagen final PHP-FPM
-#   nginx       imagen final Nginx
+#   php-runtime / nginx-runtime  imagenes finales
 #
 # Versiones fijadas y verificadas el 2026-11-24. La issue #48 revisa sus CVE.
 
@@ -28,7 +32,7 @@ ARG ALPINE_IMAGE=alpine:3.24.4
 FROM ${ALPINE_IMAGE} AS plugins
 
 ARG WOOCOMMERCE_VERSION=11.3.1
-# SHA-256 del zip. Vacio = se imprime el hash calculado para fijarlo despues.
+# SHA-256 del zip. Al cambiar la version, dejar vacio: el build imprime el hash para fijarlo.
 ARG WOOCOMMERCE_SHA256="1502600c738840f7f9ebfa2f11e1aaff087221a5fc5a2006c51be2d874ae2a09"
 
 RUN apk add --no-cache curl unzip
@@ -52,23 +56,22 @@ FROM ${WORDPRESS_IMAGE} AS wordpress
 # ---------------------------------------------------------------------------
 FROM ${ALPINE_IMAGE} AS app
 
-COPY --from=wordpress /usr/src/wordpress /srv/aurora/html
-COPY --from=plugins   /build/plugins/    /srv/aurora/html/wp-content/plugins/
-COPY wordpress/wp-config.aurora.php      /srv/aurora/wp-config.php
+COPY --from=wordpress /usr/src/wordpress   /var/www/html
+COPY --from=plugins   /build/plugins/      /var/www/html/wp-content/plugins/
+COPY docker/wordpress/wp-config.aurora.php /var/www/wp-config.php
 
 RUN set -eu; \
-    cd /srv/aurora/html; \
+    cd /var/www/html; \
     # Archivos que revelan version o no se usan
     rm -f readme.html license.txt wp-config-sample.php; \
     rm -rf wp-content/plugins/akismet wp-content/plugins/hello.php; \
     find wp-content/themes -mindepth 1 -maxdepth 1 -type d ! -name twentytwentyfive -exec rm -rf {} +; \
     mkdir -p wp-content/uploads; \
     # Codigo: root y solo lectura para el proceso
-    chown -R root:root /srv/aurora; \
-    find /srv/aurora -type d -exec chmod 0755 {} +; \
-    find /srv/aurora -type f -exec chmod 0644 {} +; \
-    # uploads es lo unico escribible; mismo dueno en ambas imagenes para que el
-    # volumen compartido quede con 10001 sin importar que contenedor lo cree primero
+    chown -R root:root /var/www; \
+    find /var/www -type d -exec chmod 0755 {} +; \
+    find /var/www -type f -exec chmod 0644 {} +; \
+    # uploads es lo unico escribible del arbol (en GKE lo tapa el volumen GCS)
     chown 10001:10001 wp-content/uploads; \
     chmod 0750 wp-content/uploads
 
@@ -91,37 +94,42 @@ RUN set -eux; \
     cat /usr/local/aurora-rundeps.txt
 
 # ---------------------------------------------------------------------------
-FROM ${PHP_IMAGE} AS php
+FROM ${PHP_IMAGE} AS php-runtime
 
 COPY --from=extensions /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
 COPY --from=extensions /usr/local/etc/php/conf.d/     /usr/local/etc/php/conf.d/
 COPY --from=extensions /usr/local/aurora-rundeps.txt  /tmp/aurora-rundeps.txt
 
 RUN set -eu; \
+    # Parches de seguridad de Alpine publicados despues de la imagen base (Trivy)
+    apk upgrade --no-cache; \
     apk add --no-cache $(cat /tmp/aurora-rundeps.txt) libcurl; \
     # Sin cliente curl en runtime (PHP usa libcurl, no el binario)
     apk del --no-cache curl; \
     rm -f /tmp/aurora-rundeps.txt; \
     cp /usr/local/etc/php/php.ini-production /usr/local/etc/php/php.ini; \
-    # Crear antes del COPY: COPY --chmod aplicaria 0644 tambien al directorio nuevo
+    # La base trae /var/www/html 1777 de www-data: se reemplaza por el arbol de "app"
+    rm -rf /var/www; \
+    # Crear antes del COPY: COPY --chmod aplicaria 0644 tambien al directorio nuevo.
+    # /run/aurora es opcional (emptyDir en memoria); sin el, la config va a /tmp/aurora.
     mkdir -p /run/aurora /usr/local/lib/aurora; \
     chown 10001:10001 /run/aurora; \
     chmod 0700 /run/aurora
 
-COPY --from=app /srv/aurora /srv/aurora
-COPY --chmod=0644 php/zz-aurora.ini          /usr/local/etc/php/conf.d/zz-aurora.ini
-COPY --chmod=0644 php/zzz-aurora-pool.conf   /usr/local/etc/php-fpm.d/zzz-aurora-pool.conf
-COPY --chmod=0644 bin/generate-config.php    /usr/local/lib/aurora/generate-config.php
-COPY --chmod=0755 bin/aurora-entrypoint.sh   /usr/local/bin/aurora-entrypoint
+COPY --from=app /var/www /var/www
+COPY --chmod=0644 docker/php/zz-aurora.ini          /usr/local/etc/php/conf.d/zz-aurora.ini
+COPY --chmod=0644 docker/php/zzz-aurora-pool.conf   /usr/local/etc/php-fpm.d/zzz-aurora-pool.conf
+COPY --chmod=0644 docker/bin/generate-config.php    /usr/local/lib/aurora/generate-config.php
+COPY --chmod=0755 docker/bin/aurora-entrypoint.sh   /usr/local/bin/aurora-entrypoint
 
-# uploads: COPY --from no conserva el dueno, se reaplica (en GKE/compose se monta un volumen encima).
+# COPY --from no conserva el dueno de uploads; se reaplica.
 # Sin gestor de paquetes en runtime (la base de datos de apk se conserva para que Trivy inventarie).
-RUN chown 10001:10001 /srv/aurora/html/wp-content/uploads && \
-    chmod 0750 /srv/aurora/html/wp-content/uploads && \
+RUN chown 10001:10001 /var/www/html/wp-content/uploads && \
+    chmod 0750 /var/www/html/wp-content/uploads && \
     rm -f /sbin/apk
 
 USER 10001:10001
-WORKDIR /srv/aurora/html
+WORKDIR /var/www/html
 EXPOSE 9000
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \
@@ -131,19 +139,22 @@ ENTRYPOINT ["/usr/local/bin/aurora-entrypoint"]
 CMD ["php-fpm"]
 
 # ---------------------------------------------------------------------------
-FROM ${NGINX_IMAGE} AS nginx
+FROM ${NGINX_IMAGE} AS nginx-runtime
 
 # snippets/ se crea antes del COPY: COPY --chmod aplicaria 0644 tambien al directorio nuevo
-RUN rm -f /etc/nginx/conf.d/default.conf && mkdir -p /etc/nginx/snippets
+# Parches de seguridad de Alpine publicados despues de la imagen base (Trivy)
+RUN apk upgrade --no-cache && \
+    rm -f /etc/nginx/conf.d/default.conf && \
+    mkdir -p /etc/nginx/snippets
 
-COPY --chmod=0644 nginx/nginx.conf      /etc/nginx/nginx.conf
-COPY --chmod=0644 nginx/aurora.conf     /etc/nginx/conf.d/aurora.conf
-COPY --chmod=0644 nginx/aurora-php.conf /etc/nginx/snippets/aurora-php.conf
+COPY --chmod=0644 docker/nginx/nginx.conf      /etc/nginx/nginx.conf
+COPY --chmod=0644 docker/nginx/aurora.conf     /etc/nginx/conf.d/aurora.conf
+COPY --chmod=0644 docker/nginx/aurora-php.conf /etc/nginx/snippets/aurora-php.conf
 
 # Mismo arbol que el contenedor PHP (Nginx sirve estaticos y comprueba que el .php exista)
-COPY --from=app /srv/aurora/html /srv/aurora/html
-RUN chown 10001:10001 /srv/aurora/html/wp-content/uploads && \
-    chmod 0750 /srv/aurora/html/wp-content/uploads
+COPY --from=app /var/www/html /var/www/html
+RUN chown 10001:10001 /var/www/html/wp-content/uploads && \
+    chmod 0750 /var/www/html/wp-content/uploads
 
 USER 10001:10001
 EXPOSE 8080

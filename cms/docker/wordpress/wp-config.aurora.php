@@ -3,22 +3,27 @@
  * AuroraShop — wp-config.php (issue #40)
  *
  * Este archivo NO contiene secretos y se versiona con otro nombre (el .gitignore excluye
- * wp-config.php). En la imagen se copia a /srv/aurora/wp-config.php, un nivel arriba del
+ * wp-config.php). En la imagen se copia a /var/www/wp-config.php, un nivel arriba del
  * webroot, asi que Nginx nunca lo sirve.
  *
- * Los valores sensibles vienen de /run/aurora/config.php, generado al arrancar por
- * generate-config.php.
+ * Los valores sensibles vienen del config.php que genera generate-config.php al arrancar
+ * (/run/aurora si existe ese emptyDir en memoria; si no, /tmp/aurora).
  */
 
-$aurora_config_file = '/run/aurora/config.php';
-if (!is_readable($aurora_config_file)) {
-    error_log('[aurora] falta /run/aurora/config.php; revisar el entrypoint');
+$aurora = null;
+foreach (['/run/aurora/config.php', '/tmp/aurora/config.php'] as $aurora_config_file) {
+    if (is_readable($aurora_config_file)) {
+        $aurora = require $aurora_config_file;
+        break;
+    }
+}
+if (!is_array($aurora)) {
+    error_log('[aurora] falta config.php generado; revisar el entrypoint');
     http_response_code(503);
     exit('Servicio no disponible.');
 }
-$aurora = require $aurora_config_file;
 
-// --- Base de datos ---
+// --- Base de datos (en GKE: cloud-sql-proxy en 127.0.0.1 con autenticacion IAM) ---
 define('DB_NAME', $aurora['DB_NAME']);
 define('DB_USER', $aurora['DB_USER']);
 define('DB_PASSWORD', $aurora['DB_PASSWORD']);
@@ -37,10 +42,14 @@ foreach ([
 // Prefijo distinto de wp_ para dificultar inyecciones genericas
 $table_prefix = $aurora['TABLE_PREFIX'];
 
-// --- URLs ---
-define('WP_HOME', $aurora['WP_HOME']);
-define('WP_SITEURL', $aurora['WP_SITEURL']);
-define('WP_ENVIRONMENT_TYPE', $aurora['AURORA_ENV'] === 'local' ? 'local' : 'production');
+// --- URLs: si no se fijan, WordPress usa las guardadas en la BD al instalar ---
+if ($aurora['WP_HOME'] !== '') {
+    define('WP_HOME', $aurora['WP_HOME']);
+}
+if ($aurora['WP_SITEURL'] !== '') {
+    define('WP_SITEURL', $aurora['WP_SITEURL']);
+}
+define('WP_ENVIRONMENT_TYPE', $aurora['WP_ENVIRONMENT_TYPE']);
 define('FORCE_SSL_ADMIN', $aurora['FORCE_SSL_ADMIN']);
 
 // --- Hardening ---

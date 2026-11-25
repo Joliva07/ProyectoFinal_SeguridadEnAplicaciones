@@ -1,12 +1,16 @@
 # AuroraShop — entorno LOCAL de pruebas (issue #40)
-# No es produccion: produccion se despliega en GKE por el pipeline (#43).
+# No es produccion: produccion se despliega en GKE por el pipeline (security-ci.yml).
 #
-# Simula el pod de GKE: nginx comparte la red de php (network_mode: service:php),
-# igual que dos contenedores del mismo pod se ven por 127.0.0.1.
+# Imita el pod de infra/k8s/base/deployment.yaml:
+#   - nginx comparte la red de php (network_mode: service:php), como dos contenedores del pod.
+#   - mismas rutas y mismos directorios escribibles (tmpfs = emptyDir del Deployment).
+#   - mismas variables de entorno; en local la BD usa contrasena en vez de IAM y
+#     los secretos vienen de .env (AURORA_SECRETS_SOURCE=env) en vez del CSI driver.
 #
-# Uso:  cp env.example .env   (y edita las contrasenas)
-#       docker compose up -d --build
-#       http://localhost:8080
+# Uso (desde cms/docker):
+#   Copy-Item env.example .env     # y edita las contrasenas
+#   docker compose up -d --build
+#   http://localhost:8080
 
 name: aurorashop-local
 
@@ -15,6 +19,11 @@ x-hardening: &hardening
   cap_drop: [ALL]
   security_opt:
     - no-new-privileges:true
+
+x-build: &build
+  # Mismo contexto que el pipeline: cms/
+  context: ..
+  dockerfile: docker/Dockerfile
 
 services:
   db:
@@ -39,23 +48,24 @@ services:
   php:
     <<: *hardening
     build:
-      context: .
-      target: php
+      <<: *build
+      target: php-runtime
     image: aurorashop/cms-php:local
     environment:
-      AURORA_ENV: local
+      WP_ENVIRONMENT_TYPE: local
       AURORA_SECRETS_SOURCE: env
       DB_HOST: db
+      DB_PORT: "3306"
       DB_NAME: ${DB_NAME:-aurorashop}
       DB_USER: ${DB_USER:-aurora_app}
       DB_PASSWORD: ${DB_PASSWORD:?define DB_PASSWORD en .env}
       WP_HOME: http://localhost:8080
       WP_TABLE_PREFIX: ${WP_TABLE_PREFIX:-aur_}
+    # Igual que el pod: solo /tmp es escribible (emptyDir php-tmp)
     tmpfs:
       - /tmp:uid=10001,gid=10001,mode=0700
-      - /run/aurora:uid=10001,gid=10001,mode=0700
     volumes:
-      - uploads:/srv/aurora/html/wp-content/uploads
+      - uploads:/var/www/html/wp-content/uploads
     # Solo en localhost de tu maquina (nginx escucha en 8080 dentro de esta red)
     ports:
       - "127.0.0.1:8080:8080"
@@ -66,14 +76,16 @@ services:
   nginx:
     <<: *hardening
     build:
-      context: .
-      target: nginx
+      <<: *build
+      target: nginx-runtime
     image: aurorashop/cms-nginx:local
     network_mode: "service:php"
+    # Igual que el pod: emptyDir nginx-cache y nginx-run
     tmpfs:
-      - /tmp:uid=10001,gid=10001,mode=0700
+      - /var/cache/nginx:uid=10001,gid=10001,mode=0700
+      - /var/run:uid=10001,gid=10001,mode=0755
     volumes:
-      - uploads:/srv/aurora/html/wp-content/uploads:ro
+      - uploads:/var/www/html/wp-content/uploads:ro
     depends_on:
       - php
 

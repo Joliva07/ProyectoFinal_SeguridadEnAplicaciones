@@ -1,8 +1,0 @@
-# Nada de secretos ni archivos locales dentro del contexto de build
-.env
-.env.*
-env.example
-*.md
-compose.yaml
-.git
-.gitattributes
