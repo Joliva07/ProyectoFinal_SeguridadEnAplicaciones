@@ -16,11 +16,11 @@ variable "cloudflare_cidrs" {
   }
 }
 variable "workload_account_id" { type = string }
-variable "deployer_service_account_email" {
-  type    = string
-  default = "sa-gh-deployer@aurorashop-sec-umg.iam.gserviceaccount.com"
-}
 variable "media_buckets" { type = map(string) }
 variable "secret_ids" { type = map(object({ secret_id = string, environment = string })) }
 variable "database_instance_name" { type = string }
+variable "artifact_registry_kms_key" {
+  type        = string
+  description = "Clave CMEK del repositorio de imágenes."
+}
 variable "labels" { type = map(string) }

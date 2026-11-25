@@ -68,9 +68,11 @@ Nadie recibe `roles/editor` ni claves JSON. Pipeline con Workload Identity Feder
 
 | Tipo | Nombre | Contenido | Proxy |
 |---|---|---|---|
-| CNAME | `aurorashop` | Ingress de GKE (IP estática del LB) | Proxied |
-| CNAME | `admin.aurorashop` | mismo Ingress, path `/wp-admin` + REST admin | Proxied + Access |
-| CNAME | `staging.aurorashop` | Ingress de staging | Proxied + Access |
+| A | `aurorashop` | `terraform output -raw ingress_ip` | Proxied |
+| A | `admin-aurorashop` | misma IP del Ingress demo | Proxied + Access |
+| A | `staging-aurorashop` | `terraform output -raw staging_ingress_ip` | Proxied + Access |
+
+Son registros **A**: el contenido de un CNAME debe ser un hostname, no una IP. Detalle y verificación en [`integracion-cloudflare-gke.md`](../05-operaciones/integracion-cloudflare-gke.md).
 
 ### 3.2 Configuración base
 
@@ -78,8 +80,9 @@ Nadie recibe `roles/editor` ni claves JSON. Pipeline con Workload Identity Feder
 - WAF Managed Rules (OWASP Core Ruleset, paranoia 2) en modo log la primera semana, luego block.
 - Rate limiting: 100 req/min por IP en el storefront; 10 req/min en `/wp-login.php` y `/xmlrpc.php`; 5 req/min en checkout.
 - Bot Fight Mode / Super Bot Fight Mode; Turnstile en login y checkout.
-- Cloudflare Access en `admin.` y `staging.` (política por correo del grupo).
-- Logpush → GCS `aurorashop-logs-archive` (HTTP requests) para correlación en BigQuery.
+- Cloudflare Access en `admin-aurorashop` y `staging-aurorashop` (política por correo del grupo).
+- Logpush → GCS `aurorashop-logs-archive-aurorashop-sec-umg-demo` (HTTP requests) para correlación en BigQuery. Terraform otorga `roles/storage.objectAdmin` a `logpush@cloudflare-data.iam.gserviceaccount.com`; no se usan claves JSON. **Limitación:** el plan Free no habilita Logpush (`1004`); el job queda pendiente de un plan que lo incluya.
+- Certificado Origin CA único con SANs `aurorashop`, `admin-aurorashop` y `staging-aurorashop`, instalado como Secret `aurorashop-origin-tls` en los namespaces `aurorashop` y `staging` por un humano; CI no puede leer ni escribir Secrets.
 - Cache rules: no cachear `wp-admin`, `wp-json`, `cart`, `checkout`, `my-account`.
 
 ### 3.3 Tokens

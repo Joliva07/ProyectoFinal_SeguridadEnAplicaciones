@@ -4,6 +4,7 @@ namespace: staging
 resources:
   - ../../base
   - ingress.yaml
+  - frontendconfig.yaml
   - backendconfig.yaml
   - secrets.yaml
 configMapGenerator:
@@ -19,6 +20,22 @@ patches:
       kind: Deployment
       name: aurorashop
     patch: |-
-      - op: replace
-        path: /spec/template/spec/volumes/4/csi/volumeAttributes/bucketName
-        value: aurorashop-media-aurorashop-sec-umg-staging
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: aurorashop
+      spec:
+        template:
+          spec:
+            volumes:
+              - name: media
+                csi:
+                  volumeAttributes:
+                    bucketName: aurorashop-media-aurorashop-sec-umg-staging
+  - target:
+      kind: Service
+      name: aurorashop-web
+    patch: |-
+      - op: add
+        path: /metadata/annotations/cloud.google.com~1backend-config
+        value: '{"default":"aurorashop-backend"}'

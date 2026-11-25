@@ -33,7 +33,7 @@ Dueño: **Javier** · Revisión: James · Estado: plantilla con activos del dise
 | A-17 | Configuración Cloudflare | Borde | WAF, Access, rate limits, Logpush | Configuración | Cloudflare | A | A | A | Crítica | Debilitar el borde = exponer la tienda | James | James | James |
 | A-18 | Logs y auditoría | Monitoreo | Ingress, app, Cloud SQL, WooCommerce, Cloudflare | Información | Cloud Logging + BigQuery | M | A | M | Alta | Detección y evidencia | Arun | Arun | Arun, James |
 | A-19 | Backups de BD y media | Continuidad | Snapshots y exportaciones cifradas | Información | GCS | A | A | M | Crítica | Recuperación sin pérdida | Javier | Josue | James, Josue |
-| A-20 | Panel administrativo | Administración | `admin.aurorashop...` + `wp-admin` | Servicios | Cloudflare Access → GKE | A | A | M | Crítica | Acceso privilegiado | James | Horacio | Admins |
+| A-20 | Panel administrativo | Administración | `admin-aurorashop...` + `wp-admin` | Servicios | Cloudflare Access → GKE | A | A | M | Crítica | Acceso privilegiado | James | Horacio | Admins |
 | A-21 | Base de datos MySQL | Operación | Esquema WordPress/WooCommerce | Información | Cloud SQL | A | A | A | Crítica | Fuente de verdad del negocio | Josue | Josue | App |
 | A-22 | Pasarela de pago sandbox | Cobro | Cuenta y claves API de prueba | Servicios | Proveedor | A | A | M | Crítica | Fraude y repudio | James | James | Backend |
 | A-23 | Repositorio de código | Desarrollo | Código, IaC, docs | Información | GitHub | M | A | M | Alta | Inyección de código | James | James | Equipo |

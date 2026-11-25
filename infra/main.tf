@@ -79,21 +79,22 @@ module "data" {
 module "compute" {
   source = "./modules/compute"
 
-  project_id             = var.project_id
-  region                 = var.region
-  environment            = var.environment
-  name_prefix            = var.name_prefix
-  network_id             = module.network.network_id
-  subnetwork_id          = module.network.subnetwork_id
-  cluster_pods_range     = module.network.pods_range_name
-  cluster_services_range = module.network.services_range_name
-  cloudflare_cidrs       = local.cloudflare_cidrs
-  workload_account_id    = "sa-gke-workload"
-  media_buckets          = module.data.media_bucket_names
-  secret_ids             = module.data.secret_ids
-  database_instance_name = module.data.database_instance_name
-  labels                 = local.common_labels
-  depends_on             = [google_project_service.required, module.network, module.data]
+  project_id                = var.project_id
+  region                    = var.region
+  environment               = var.environment
+  name_prefix               = var.name_prefix
+  network_id                = module.network.network_id
+  subnetwork_id             = module.network.subnetwork_id
+  cluster_pods_range        = module.network.pods_range_name
+  cluster_services_range    = module.network.services_range_name
+  cloudflare_cidrs          = local.cloudflare_cidrs
+  workload_account_id       = "sa-gke-workload"
+  media_buckets             = module.data.media_bucket_names
+  secret_ids                = module.data.secret_ids
+  database_instance_name    = module.data.database_instance_name
+  artifact_registry_kms_key = module.data.storage_key_id
+  labels                    = local.common_labels
+  depends_on                = [google_project_service.required, module.network, module.data]
 }
 
 module "observability" {

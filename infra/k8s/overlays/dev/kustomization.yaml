@@ -17,6 +17,15 @@ patches:
       kind: Deployment
       name: aurorashop
     patch: |-
-      - op: replace
-        path: /spec/template/spec/volumes/4/csi/volumeAttributes/bucketName
-        value: aurorashop-media-aurorashop-sec-umg-dev
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: aurorashop
+      spec:
+        template:
+          spec:
+            volumes:
+              - name: media
+                csi:
+                  volumeAttributes:
+                    bucketName: aurorashop-media-aurorashop-sec-umg-dev

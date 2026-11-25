@@ -5,12 +5,13 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: gce
     kubernetes.io/ingress.global-static-ip-name: aurorashop-demo-ingress-ip
-    networking.gke.io/ssl-redirect: "true"
+    networking.gke.io/v1beta1.FrontendConfig: aurorashop-frontend
 spec:
+  ingressClassName: gce
   tls:
     - hosts:
         - aurorashop.ancordss.me.uk
-        - admin.aurorashop.ancordss.me.uk
+        - admin-aurorashop.ancordss.me.uk
       secretName: aurorashop-origin-tls
   rules:
     - host: aurorashop.ancordss.me.uk
@@ -23,7 +24,7 @@ spec:
                 name: aurorashop-web
                 port:
                   number: 80
-    - host: admin.aurorashop.ancordss.me.uk
+    - host: admin-aurorashop.ancordss.me.uk
       http:
         paths:
           - path: /

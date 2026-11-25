@@ -10,7 +10,7 @@
 
 Aplican a todo escaneo o prueba de explotación de las fases 4 y 5:
 
-1. Objetivo permitido: únicamente los hosts del proyecto (`aurorashop.ancordss.me.uk`, `admin.aurorashop.ancordss.me.uk`, `staging.aurorashop.ancordss.me.uk`), el proyecto GCP del curso y la imagen construida por el equipo.
+1. Objetivo permitido: únicamente los hosts del proyecto (`aurorashop.ancordss.me.uk`, `admin-aurorashop.ancordss.me.uk`, `staging-aurorashop.ancordss.me.uk`), el proyecto GCP del curso y la imagen construida por el equipo.
 2. Ventana: anunciada en la issue de pentest y aprobada por James. Fuera de ventana, solo escaneos pasivos.
 3. Prohibido: pruebas de denegación de servicio, fuerza bruta sin límite de tasa, explotación de terceros, persistencia, exfiltración real de datos, modificación de datos que no sean de la cuenta de prueba.
 4. Límites de tasa: máximo 5 req/s en pruebas autenticadas; ZAP en modo `-l` (low); sin pruebas de pago con tarjetas reales.

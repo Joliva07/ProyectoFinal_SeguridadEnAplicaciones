@@ -11,7 +11,7 @@ Estado al 2026-11-24: pendientes de ejecución. Los artifacts de Actions se cons
 | `npm-audit/` | Security CI si aparece lockfile JS | No aplica aún: no hay `package.json` |
 | `iac/` | Checkov, tfsec, Kubesec | Pendiente de ejecución |
 | `trivy/` | Security CI | Pendiente: falta Dockerfile de Horacio |
-| `containers-k8s/` | Matriz `docs/04-ciberdefensa/evaluacion-contenedores.md` | Pendiente: falta clúster |
+| `containers-k8s/` | Matriz `docs/04-ciberdefensa/evaluacion-contenedores.md` | Parcial: `local-kind-2026-11-24.md` cubre PSA, NetworkPolicy, RBAC, Ingress y HPA/PDB; falta GKE |
 | `actions/` | Security CI, Terraform plan/apply | Pendiente de workflows remotos |
 
 Para cada resultado: incluir comando, versión, commit, resumen de hallazgos y decisión de triaje; dejar el valor original del reporte como artifact privado si contiene datos internos.
