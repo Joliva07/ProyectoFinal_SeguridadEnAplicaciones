@@ -39,3 +39,12 @@ evidencias/**/*.mp4
 Thumbs.db
 .idea/
 .vscode/
+
+# Reportes locales de CI
+semgrep.sarif
+kubesec-*.json
+composer-audit.json
+npm-audit.json
+
+# Planes locales de Terraform
+infra/tfplan*

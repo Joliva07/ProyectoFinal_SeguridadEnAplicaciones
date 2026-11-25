@@ -56,11 +56,12 @@ jobs:
       - name: Semgrep PHP and OWASP rules
         run: >-
           docker run --rm
-          -v "${GITHUB_WORKSPACE}:/repo"
-          -w /repo
+          -e SEMGREP_IN_DOCKER=1
+          -v "${GITHUB_WORKSPACE}:/src"
+          -w /src
           semgrep/semgrep:1.186.0
           semgrep scan --config p/php --config p/owasp-top-ten --config p/secrets
-          --error --sarif --output /repo/semgrep.sarif
+          --error --sarif --output /src/semgrep.sarif
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
@@ -114,7 +115,13 @@ jobs:
           curl --fail --silent --show-error --location \
             https://getcomposer.org/download/2.11.3/composer.phar \
             --output "$RUNNER_TEMP/composer.phar"
-          echo "dd158c0afd41d15fac89e1b4e47b5d42911fe316c3687cd5edac98319b25d028  $RUNNER_TEMP/composer.phar" | sha256sum --check
+          echo "04f8b003da4e3a2459056591fbfebd02b4dc3e5adeb158616b90cf55a65113ec  $RUNNER_TEMP/composer.phar" | sha256sum --check
+          count=$(python3 -c 'import json; d=json.load(open("composer.lock")); print(len(d.get("packages", [])) + len(d.get("packages-dev", [])))')
+          if [ "$count" -eq 0 ]; then
+            echo "::notice::composer.lock no declara dependencias todavía; la auditoría se activa cuando el CMS las agregue."
+            printf '{"advisories":[],"abandoned":[],"packages":0}\n' > composer-audit.json
+            exit 0
+          fi
           docker run --rm \
             -v "${GITHUB_WORKSPACE}/cms:/app" \
             -v "$RUNNER_TEMP/composer.phar:/tmp/composer.phar:ro" \
@@ -148,12 +155,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Checkov Terraform and Kubernetes
+      - name: Checkov Terraform
         run: >-
           docker run --rm
           -v "${GITHUB_WORKSPACE}:/repo"
           bridgecrew/checkov:3.3.27
-          --directory /repo/infra --framework terraform,kubernetes
+          --directory /repo/infra --framework terraform
+          --config-file /repo/.checkov.yaml
           --soft-fail-on LOW,MEDIUM --hard-fail-on HIGH,CRITICAL
           --output sarif --output-file-path /repo/checkov.sarif
       - name: tfsec Terraform
@@ -162,20 +170,45 @@ jobs:
           -v "${GITHUB_WORKSPACE}:/repo"
           aquasec/tfsec:v1.28.14
           --minimum-severity HIGH --no-color /repo/infra
-      - name: Render demo manifests and run Kubesec
+      - name: Render manifests for each overlay
         run: |
-          kubectl kustomize infra/k8s/overlays/demo > rendered-demo.yaml
-          docker run --rm \
-            -v "${GITHUB_WORKSPACE}:/repo" \
-            kubesec/kubesec:v2.15.0 scan /repo/rendered-demo.yaml > kubesec.json
+          mkdir -p rendered
+          for overlay in dev staging demo; do
+            kubectl kustomize "infra/k8s/overlays/${overlay}" > "rendered/${overlay}.yaml"
+          done
+      - name: Checkov Kubernetes rendered manifests
+        run: >-
+          docker run --rm
+          -v "${GITHUB_WORKSPACE}:/repo"
+          bridgecrew/checkov:3.3.27
+          --directory /repo/rendered --framework kubernetes
+          --config-file /repo/.checkov.yaml
+          --soft-fail-on LOW,MEDIUM --hard-fail-on HIGH,CRITICAL
+      - name: Run Kubesec on rendered deployments
+        run: |
+          for overlay in dev staging demo; do
+            python3 - "$overlay" <<'PY'
+          import sys
+          overlay = sys.argv[1]
+          docs = open(f"rendered/{overlay}.yaml").read().split("\n---\n")
+          deployment = [doc for doc in docs if "\nkind: Deployment" in doc]
+          if len(deployment) != 1:
+              raise SystemExit(f"{overlay}: se esperaba 1 Deployment, hay {len(deployment)}")
+          open(f"rendered/{overlay}-deployment.yaml", "w").write(deployment[0])
+          PY
+            docker run --rm \
+              -v "${GITHUB_WORKSPACE}:/repo" \
+              kubesec/kubesec:v2.15.0 scan "/repo/rendered/${overlay}-deployment.yaml" \
+              > "kubesec-${overlay}.json"
+          done
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: iac-reports
           path: |
             checkov.sarif
-            kubesec.json
-            rendered-demo.yaml
+            kubesec-*.json
+            rendered/*.yaml
           retention-days: 30
           if-no-files-found: ignore
 

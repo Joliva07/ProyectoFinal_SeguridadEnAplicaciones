@@ -9,6 +9,10 @@ resource "google_kms_crypto_key" "sql" {
   key_ring        = google_kms_key_ring.main.id
   rotation_period = "7776000s"
   purpose         = "ENCRYPT_DECRYPT"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "google_kms_crypto_key" "storage" {
@@ -16,6 +20,10 @@ resource "google_kms_crypto_key" "storage" {
   key_ring        = google_kms_key_ring.main.id
   rotation_period = "7776000s"
   purpose         = "ENCRYPT_DECRYPT"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "google_kms_crypto_key" "secrets" {
@@ -23,6 +31,10 @@ resource "google_kms_crypto_key" "secrets" {
   key_ring        = google_kms_key_ring.main.id
   rotation_period = "7776000s"
   purpose         = "ENCRYPT_DECRYPT"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "google_kms_crypto_key" "logs" {
@@ -30,6 +42,10 @@ resource "google_kms_crypto_key" "logs" {
   key_ring        = google_kms_key_ring.main.id
   rotation_period = "7776000s"
   purpose         = "ENCRYPT_DECRYPT"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 locals {
@@ -46,8 +62,9 @@ locals {
 }
 
 resource "google_project_service_identity" "cloudsql" {
-  project = var.project_id
-  service = "sqladmin.googleapis.com"
+  provider = google-beta
+  project  = var.project_id
+  service  = "sqladmin.googleapis.com"
 }
 
 resource "google_kms_crypto_key_iam_member" "cloudsql" {
@@ -57,8 +74,9 @@ resource "google_kms_crypto_key_iam_member" "cloudsql" {
 }
 
 resource "google_project_service_identity" "secretmanager" {
-  project = var.project_id
-  service = "secretmanager.googleapis.com"
+  provider = google-beta
+  project  = var.project_id
+  service  = "secretmanager.googleapis.com"
 }
 
 resource "google_kms_crypto_key_iam_member" "secretmanager" {
@@ -67,27 +85,69 @@ resource "google_kms_crypto_key_iam_member" "secretmanager" {
   member        = "serviceAccount:${google_project_service_identity.secretmanager.email}"
 }
 
+resource "google_project_service_identity" "storage" {
+  provider = google-beta
+  project  = var.project_id
+  service  = "storage.googleapis.com"
+}
+
+resource "google_project_service_identity" "artifact_registry" {
+  provider = google-beta
+  project  = var.project_id
+  service  = "artifactregistry.googleapis.com"
+}
+
 resource "google_kms_crypto_key_iam_member" "storage" {
   crypto_key_id = google_kms_crypto_key.storage.id
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
   member        = "serviceAccount:service-${var.project_number}@gs-project-accounts.iam.gserviceaccount.com"
+  depends_on    = [google_project_service_identity.storage]
 }
 
 resource "google_kms_crypto_key_iam_member" "storage_logs" {
   crypto_key_id = google_kms_crypto_key.logs.id
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
   member        = "serviceAccount:service-${var.project_number}@gs-project-accounts.iam.gserviceaccount.com"
+  depends_on    = [google_project_service_identity.storage]
+}
+
+resource "google_kms_crypto_key_iam_member" "artifact_registry" {
+  crypto_key_id = google_kms_crypto_key.storage.id
+  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+  member        = "serviceAccount:service-${var.project_number}@gcp-sa-artifactregistry.iam.gserviceaccount.com"
+  depends_on    = [google_project_service_identity.artifact_registry]
 }
 
 resource "google_project_service_identity" "bigquery" {
-  project = var.project_id
-  service = "bigquery.googleapis.com"
+  provider = google-beta
+  project  = var.project_id
+  service  = "bigquery.googleapis.com"
 }
 
 resource "google_kms_crypto_key_iam_member" "bigquery_logs" {
   crypto_key_id = google_kms_crypto_key.logs.id
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
-  member        = "serviceAccount:${google_project_service_identity.bigquery.email}"
+  member        = "serviceAccount:bq-${var.project_number}@bigquery-encryption.iam.gserviceaccount.com"
+}
+
+# Bucket receptor de access logs. No se registra a sí mismo para evitar recursión.
+#checkov:skip=CKV_GCP_62:Un bucket de logs no puede registrar su propio acceso sin recursión.
+resource "google_storage_bucket" "access_logs" { # nosemgrep: terraform.gcp.security.gcp-cloud-storage-logging.gcp-cloud-storage-logging
+  project                     = var.project_id
+  name                        = "${var.name_prefix}-access-logs-${var.project_id}-${var.environment}"
+  location                    = var.region
+  storage_class               = "STANDARD"
+  uniform_bucket_level_access = true
+  public_access_prevention    = "enforced"
+  force_destroy               = false
+  labels                      = var.labels
+
+  versioning { enabled = true }
+
+  lifecycle_rule {
+    condition { age = 30 }
+    action { type = "Delete" }
+  }
 }
 
 resource "google_storage_bucket" "media" {
@@ -100,8 +160,13 @@ resource "google_storage_bucket" "media" {
   public_access_prevention    = "enforced"
   force_destroy               = false
   labels                      = local.labels_by_environment[each.value]
+  depends_on                  = [google_kms_crypto_key_iam_member.storage]
 
   versioning { enabled = true }
+
+  logging {
+    log_bucket = google_storage_bucket.access_logs.name
+  }
 
   encryption {
     default_kms_key_name = google_kms_crypto_key.storage.id
@@ -118,8 +183,13 @@ resource "google_storage_bucket" "backups" {
   public_access_prevention    = "enforced"
   force_destroy               = false
   labels                      = local.labels_by_environment[each.value]
+  depends_on                  = [google_kms_crypto_key_iam_member.storage]
 
   versioning { enabled = true }
+
+  logging {
+    log_bucket = google_storage_bucket.access_logs.name
+  }
 
   encryption {
     default_kms_key_name = google_kms_crypto_key.storage.id
@@ -135,8 +205,13 @@ resource "google_storage_bucket" "logs_archive" {
   public_access_prevention    = "enforced"
   force_destroy               = false
   labels                      = var.labels
+  depends_on                  = [google_kms_crypto_key_iam_member.storage_logs]
 
   versioning { enabled = true }
+
+  logging {
+    log_bucket = google_storage_bucket.access_logs.name
+  }
 
   retention_policy {
     retention_period = 7776000
@@ -148,12 +223,21 @@ resource "google_storage_bucket" "logs_archive" {
   }
 }
 
+# Cuenta de servicio documentada por Cloudflare para Logpush a GCS.
+# Solo escribe en el bucket de archivo de logs, no en el resto del proyecto.
+resource "google_storage_bucket_iam_member" "cloudflare_logpush" { #tfsec:ignore:AVD-GCP-0007:Cloudflare exige objectAdmin solo en el bucket de logs para el ownership challenge y la escritura.
+  bucket = google_storage_bucket.logs_archive.name
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:logpush@cloudflare-data.iam.gserviceaccount.com"
+}
+
 resource "google_secret_manager_secret" "app" {
   for_each = local.app_secrets
 
-  project   = var.project_id
-  secret_id = each.value
-  labels    = local.labels_by_environment[each.value]
+  project    = var.project_id
+  secret_id  = each.key
+  labels     = local.labels_by_environment[each.value]
+  depends_on = [google_kms_crypto_key_iam_member.secretmanager]
 
   replication {
     user_managed {
@@ -167,7 +251,7 @@ resource "google_secret_manager_secret" "app" {
   }
 }
 
-resource "google_sql_database_instance" "main" {
+resource "google_sql_database_instance" "main" { #tfsec:ignore:AVD-GCP-0015:Cloud SQL Auth Proxy con IAM usa TLS sin certificado de cliente; ssl_mode=ENCRYPTED_ONLY exige cifrado.
   project             = var.project_id
   name                = "${var.name_prefix}-${var.environment}-mysql"
   region              = var.region
@@ -175,7 +259,7 @@ resource "google_sql_database_instance" "main" {
   root_password       = null
   encryption_key_name = google_kms_crypto_key.sql.id
   deletion_protection = true
-  depends_on          = [google_service_networking_connection.private_services, google_kms_crypto_key_iam_member.cloudsql]
+  depends_on          = [google_kms_crypto_key_iam_member.cloudsql]
 
   settings {
     tier                  = var.database_tier
@@ -189,7 +273,7 @@ resource "google_sql_database_instance" "main" {
     backup_configuration {
       enabled                        = true
       start_time                     = "07:00"
-      point_in_time_recovery_enabled = true
+      binary_log_enabled             = true
       transaction_log_retention_days = 7
       backup_retention_settings {
         retained_backups = 7
@@ -202,7 +286,7 @@ resource "google_sql_database_instance" "main" {
       private_network                               = var.network_id
       allocated_ip_range                            = var.private_ip_range
       enable_private_path_for_google_cloud_services = true
-      ssl_mode                                      = "ENCRYPTED_ONLY"
+      ssl_mode                                      = "ENCRYPTED_ONLY" # nosemgrep: terraform.gcp.security.gcp-sql-database-ssl-insecure-value-postgres-mysql.gcp-sql-database-ssl-insecure-value-postgres-mysql
     }
 
     database_flags {

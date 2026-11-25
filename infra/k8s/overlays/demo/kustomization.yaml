@@ -4,6 +4,7 @@ namespace: aurorashop
 resources:
   - ../../base
   - ingress.yaml
+  - frontendconfig.yaml
   - backendconfig.yaml
   - secrets.yaml
 configMapGenerator:
@@ -14,3 +15,11 @@ configMapGenerator:
       - WP_ENVIRONMENT_TYPE=production
 generatorOptions:
   disableNameSuffixHash: true
+patches:
+  - target:
+      kind: Service
+      name: aurorashop-web
+    patch: |-
+      - op: add
+        path: /metadata/annotations/cloud.google.com~1backend-config
+        value: '{"default":"aurorashop-backend"}'

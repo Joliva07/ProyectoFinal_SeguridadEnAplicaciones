@@ -25,7 +25,15 @@ spec:
     spec:
       serviceAccountName: aurorashop-app
       automountServiceAccountToken: false
+      enableServiceLinks: false
       terminationGracePeriodSeconds: 60
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: aurorashop
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001
@@ -66,6 +74,8 @@ spec:
               ephemeral-storage: 512Mi
           securityContext:
             allowPrivilegeEscalation: false
+            appArmorProfile:
+              type: RuntimeDefault
             readOnlyRootFilesystem: true
             privileged: false
             capabilities:
@@ -130,6 +140,8 @@ spec:
               ephemeral-storage: 1Gi
           securityContext:
             allowPrivilegeEscalation: false
+            appArmorProfile:
+              type: RuntimeDefault
             readOnlyRootFilesystem: true
             privileged: false
             capabilities:
@@ -160,6 +172,13 @@ spec:
               port: mysql
             periodSeconds: 5
             timeoutSeconds: 2
+          livenessProbe:
+            tcpSocket:
+              port: mysql
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 2
+            failureThreshold: 3
           resources:
             requests:
               cpu: 100m
@@ -173,6 +192,8 @@ spec:
             runAsNonRoot: true
             runAsUser: 65532
             allowPrivilegeEscalation: false
+            appArmorProfile:
+              type: RuntimeDefault
             readOnlyRootFilesystem: true
             privileged: false
             capabilities:

@@ -15,6 +15,13 @@ resource "google_service_account" "workload" {
   description  = "Identidad de Workload Identity para el ambiente ${each.key}."
 }
 
+resource "google_service_account" "deployer" {
+  project      = var.project_id
+  account_id   = "sa-gh-deployer"
+  display_name = "GitHub Actions deployer"
+  description  = "Identidad de CI para desplegar por Connect Gateway."
+}
+
 resource "google_project_iam_member" "workload_sql_client" {
   for_each = google_service_account.workload
   project  = var.project_id
@@ -34,6 +41,7 @@ resource "google_service_account_iam_member" "workload_identity" {
   service_account_id = each.value.name
   role               = "roles/iam.workloadIdentityUser"
   member             = "serviceAccount:${local.workload_pool}[${local.environments[each.key]}/aurorashop-app]"
+  depends_on         = [google_container_cluster.main]
 }
 
 resource "google_storage_bucket_iam_member" "media_writer" {
@@ -65,6 +73,7 @@ resource "google_artifact_registry_repository" "images" {
   repository_id = var.name_prefix
   description   = "Imágenes verificadas de AuroraShop."
   format        = "DOCKER"
+  kms_key_name  = var.artifact_registry_kms_key
   labels        = var.labels
 }
 
@@ -73,7 +82,6 @@ resource "google_compute_global_address" "ingress" {
   name         = "${var.name_prefix}-demo-ingress-ip"
   address_type = "EXTERNAL"
   ip_version   = "IPV4"
-  network_tier = "PREMIUM"
 }
 
 resource "google_compute_global_address" "staging_ingress" {
@@ -81,7 +89,6 @@ resource "google_compute_global_address" "staging_ingress" {
   name         = "${var.name_prefix}-staging-ingress-ip"
   address_type = "EXTERNAL"
   ip_version   = "IPV4"
-  network_tier = "PREMIUM"
 }
 
 resource "google_compute_security_policy" "edge" {
@@ -116,6 +123,19 @@ resource "google_compute_security_policy" "edge" {
     }
   }
 
+  rule {
+    action      = "deny(403)"
+    priority    = 120
+    description = "Reglas canary de CVE (Log4Shell/React RCE)."
+    preview     = false
+
+    match {
+      expr {
+        expression = "evaluatePreconfiguredExpr('cve-canary')"
+      }
+    }
+  }
+
   dynamic "rule" {
     for_each = { for index, cidrs in chunklist(var.cloudflare_cidrs, 10) : index => cidrs }
     content {
@@ -146,7 +166,7 @@ resource "google_compute_security_policy" "edge" {
   }
 }
 
-resource "google_container_cluster" "main" {
+resource "google_container_cluster" "main" { #tfsec:ignore:AVD-GCP-0061:Endpoint privado sin IP pública; authorized networks no aplica. #tfsec:ignore:AVD-GCP-0047:Autopilot usa PodSecurity/PSA, no PSP. #tfsec:ignore:AVD-GCP-0048:Autopilot administra el metadata server; Workload Identity activo.
   project             = var.project_id
   name                = "${var.name_prefix}-gke"
   location            = var.region
@@ -154,8 +174,6 @@ resource "google_container_cluster" "main" {
   network             = var.network_id
   subnetwork          = var.subnetwork_id
   deletion_protection = true
-  enable_legacy_abac  = false
-  networking_mode     = "VPC_NATIVE"
   release_channel { channel = "REGULAR" }
 
   ip_allocation_policy {
@@ -167,12 +185,9 @@ resource "google_container_cluster" "main" {
     enable_private_nodes    = true
     enable_private_endpoint = true
     master_ipv4_cidr_block  = "172.16.0.0/28"
-    master_global_access_config { enabled = false }
   }
 
-  master_auth {
-    client_certificate_config { issue_client_certificate = false }
-  }
+  master_authorized_networks_config {}
 
   workload_identity_config {
     workload_pool = local.workload_pool
@@ -184,14 +199,6 @@ resource "google_container_cluster" "main" {
       enabled           = true
       rotation_interval = "120s"
     }
-  }
-
-  logging_config {
-    enable_components = ["SYSTEM_COMPONENTS", "WORKLOADS"]
-  }
-
-  monitoring_config {
-    enable_components = ["SYSTEM_COMPONENTS", "WORKLOADS"]
   }
 
   resource_labels = var.labels
@@ -213,23 +220,29 @@ resource "google_gke_hub_membership" "main" {
 resource "google_project_iam_member" "deployer_cluster_viewer" {
   project = var.project_id
   role    = "roles/container.clusterViewer"
-  member  = "serviceAccount:${var.deployer_service_account_email}"
+  member  = "serviceAccount:${google_service_account.deployer.email}"
+}
+
+resource "google_project_iam_member" "deployer_container_developer" {
+  project = var.project_id
+  role    = "roles/container.developer"
+  member  = "serviceAccount:${google_service_account.deployer.email}"
 }
 
 resource "google_project_iam_member" "deployer_gateway_viewer" {
   project = var.project_id
   role    = "roles/gkehub.viewer"
-  member  = "serviceAccount:${var.deployer_service_account_email}"
+  member  = "serviceAccount:${google_service_account.deployer.email}"
 }
 
 resource "google_project_iam_member" "deployer_gateway_editor" {
   project = var.project_id
   role    = "roles/gkehub.gatewayEditor"
-  member  = "serviceAccount:${var.deployer_service_account_email}"
+  member  = "serviceAccount:${google_service_account.deployer.email}"
 }
 
 resource "google_project_iam_member" "deployer_registry_writer" {
   project = var.project_id
   role    = "roles/artifactregistry.writer"
-  member  = "serviceAccount:${var.deployer_service_account_email}"
+  member  = "serviceAccount:${google_service_account.deployer.email}"
 }

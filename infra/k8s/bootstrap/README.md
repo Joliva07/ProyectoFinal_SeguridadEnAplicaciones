@@ -11,7 +11,9 @@ kubectl apply -f infra/k8s/bootstrap/workload-serviceaccounts.yaml
 kubectl apply -f infra/k8s/bootstrap/rbac.yaml
 ```
 
-Antes de aplicar los Ingress en `staging` y `aurorashop`, James debe entregar el certificado Cloudflare Origin CA. Crear `aurorashop-origin-tls` en ambos namespaces desde un canal seguro con `kubectl create secret tls`; no guardar el PEM ni la clave privada en el repositorio. El rol de CI no tiene permiso para leer o escribir Secrets. James configura DNS y Access para `staging.aurorashop.ancordss.me.uk`.
+Antes de aplicar los Ingress en `staging` y `aurorashop`, James debe entregar el certificado Cloudflare Origin CA. Un solo certificado con SANs `aurorashop.ancordss.me.uk`, `admin.aurorashop.ancordss.me.uk` y `staging.aurorashop.ancordss.me.uk` se instala como `aurorashop-origin-tls` en ambos namespaces desde un canal seguro con `kubectl create secret tls`; no guardar el PEM ni la clave privada en el repositorio. El rol de CI no tiene permiso para leer o escribir Secrets. James configura DNS (registros A proxied) y Access; los pasos exactos y las verificaciones están en [`docs/05-operaciones/integracion-cloudflare-gke.md`](../../../docs/05-operaciones/integracion-cloudflare-gke.md).
+
+El Ingress crea el balanceador aunque el Secret no exista, pero Cloudflare responde 526 hasta que se cree. El orden obligatorio es: `terraform apply` → crear Secrets → `kubectl apply -k` del overlay.
 
 El rol CI solo modifica los recursos de la aplicación en estos namespaces. No puede cambiar RBAC, namespaces, secretos de Kubernetes ni recursos del plano de control. Revisa y aplica esta carpeta una sola vez, luego los despliegues usan `kubectl apply -k infra/k8s/overlays/demo`.
 

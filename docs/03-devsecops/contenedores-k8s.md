@@ -2,7 +2,7 @@
 
 Dueño: **Josue** (contrato de imagen, despliegue y hardening) · Revisión: Arun · Componente 2.
 
-> Estado: manifiestos y pipeline preparados. La imagen de CMS es una dependencia de Horacio y no existe todavía en `cms/docker/`; por eso no hay reporte Trivy ni ejecución de rollout.
+> Estado: clúster GKE Autopilot aplicado el 2026-11-24; namespaces PSA, Workload Identity, RBAC de CI y drivers CSI verificados. Falta la imagen del CMS (#40) y el certificado Origin CA para aplicar el Ingress; el rollout sigue sin ejecutarse.
 
 ## 1. Contrato de la imagen
 

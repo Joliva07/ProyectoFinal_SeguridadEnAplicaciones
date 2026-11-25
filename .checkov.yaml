@@ -1,0 +1,32 @@
+# Supresiones justificadas del gate Checkov.
+# El gate sigue bloqueando HIGH/CRITICAL; aquí solo se documentan controles que
+# no aplican a GKE Autopilot o que el análisis estático no puede leer.
+skip-check:
+  # Autopilot no emite certificados de cliente y el campo no es configurable.
+  - CKV_GCP_13
+  # Autopilot habilita el metadata server y Dataplane V2 aplica NetworkPolicy;
+  # los manifiestos declaran NetworkPolicy explícita igual.
+  - CKV_GCP_69
+  - CKV_GCP_12
+  # El plano de control no publica endpoint: authorized networks no aplica.
+  - CKV_GCP_20
+  # RBAC se administra con IAM + Connect Gateway, no con Google Groups.
+  - CKV_GCP_65
+  # Los flow logs ya están activos; intranode visibility no aplica a Dataplane V2.
+  - CKV_GCP_61
+  # ssl_mode = ENCRYPTED_ONLY está configurado; el check no evalúa ese campo.
+  - CKV_GCP_6
+  # MySQL habilita PITR con binary_log_enabled; el check busca el flag de PostgreSQL.
+  - CKV2_GCP_20
+  # VPC personalizada (auto_create_subnetworks = false), sin red default.
+  - CKV2_GCP_18
+  # Binary Authorization exige política y rompería el bootstrap; riesgo aceptado
+  # en docs/03-devsecops/iac-hardening.md.
+  - CKV_GCP_66
+  # Todos los buckets registran acceso en el bucket sumidero; el sumidero no
+  # puede registrarse a sí mismo sin recursión.
+  - CKV_GCP_62
+  # El deploy de CI sustituye el tag por digest; el tag local es placeholder.
+  - CKV_K8S_43
+  # IfNotPresent es correcto para imágenes fijadas por digest.
+  - CKV_K8S_15

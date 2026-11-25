@@ -6,6 +6,10 @@ terraform {
       source  = "hashicorp/google"
       version = "~> 8.2.0"
     }
+    google-beta = {
+      source  = "hashicorp/google-beta"
+      version = "~> 8.2.0"
+    }
     http = {
       source  = "hashicorp/http"
       version = "~> 3.5.0"
@@ -14,6 +18,11 @@ terraform {
 }
 
 provider "google" {
+  project = var.project_id
+  region  = var.region
+}
+
+provider "google-beta" {
   project = var.project_id
   region  = var.region
 }
