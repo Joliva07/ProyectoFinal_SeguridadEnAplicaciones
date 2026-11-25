@@ -68,9 +68,32 @@ php -r 'foreach(["AUTH_SALT","SECURE_AUTH_SALT","LOGGED_IN_SALT","NONCE_SALT"] a
 
 Si falta un secreto o el JSON está incompleto, el contenedor php no arranca y el log dice cuál es (`[aurora-config] ERROR: ...`).
 
-### Pendiente de equipo: instalación de WordPress
+### Instalación de WordPress (una vez por ambiente)
 
-El rol `aurorashop_runtime_*` ([`infra/sql/grant-runtime-role.sql.template`](../../infra/sql/grant-runtime-role.sql.template)) solo tiene `SELECT, INSERT, UPDATE, DELETE`. Es correcto para la operación, pero **WordPress y WooCommerce necesitan `CREATE`/`ALTER`/`INDEX`** para crear sus tablas al instalarse y al actualizarse. Hay que definir un paso de instalación aparte, por ejemplo un Job temporal con un usuario de migración que se elimina al terminar.
+Nginx bloquea `/wp-admin/install.php` y `setup-config.php` (403), así que nadie puede "reclamar" el sitio desde internet. WordPress se instala **desde dentro del pod** con [`bin/install-wordpress.php`](bin/install-wordpress.php).
+
+El rol `aurorashop_runtime_*` ([`infra/sql/grant-runtime-role.sql.template`](../../infra/sql/grant-runtime-role.sql.template)) solo tiene `SELECT, INSERT, UPDATE, DELETE`. Crear las tablas exige permisos extra **solo durante la instalación**. Procedimiento (ejecutado en `demo` el 2026-11-25):
+
+1. Usuario administrador temporal (contraseña larga, no se guarda):
+   `gcloud sql users create aurora-migrate --instance=aurorashop-demo-mysql --host=% --password=...`
+2. En **Cloud SQL Studio**, con ese usuario: aplicar el template del ambiente y, temporalmente,
+   ``GRANT CREATE, ALTER, INDEX, REFERENCES ON `aurorashop_demo`.* TO 'sa-gke-workload-demo'@'%';``
+3. Instalar (la contraseña del admin sale solo por STDOUT, a un archivo local; guardarla en un gestor y borrar el archivo):
+   ```bash
+   POD=$(kubectl get pods -n aurorashop -l app.kubernetes.io/name=aurorashop -o jsonpath='{.items[0].metadata.name}')
+   kubectl exec -i -n aurorashop "$POD" -c php-fpm -- php -- https://aurorashop.ancordss.me.uk < cms/docker/bin/install-wordpress.php > credenciales.txt
+   ```
+4. Limpiar:
+   ``REVOKE CREATE, ALTER, INDEX, REFERENCES ON `aurorashop_demo`.* FROM 'sa-gke-workload-demo'@'%';``
+   y `gcloud sql users delete aurora-migrate --instance=aurorashop-demo-mysql --host=%`.
+
+Las **actualizaciones** de WordPress/WooCommerce que cambien el esquema repiten los pasos 1, 2 y 4.
+
+### Notas del primer despliegue en `demo` (2026-11-25)
+
+- Los nodos de Autopilot usan la cuenta `<número>-compute@developer`; necesitan `roles/artifactregistry.reader` sobre el repositorio `aurorashop` para descargar las imágenes. Se dio a mano y falta en Terraform (`google_artifact_registry_repository_iam_member`).
+- Cargar secretos con `--data-file=-` desde **bash**. En PowerShell 5.1 el pipe a `gcloud` agrega un BOM (`U+FEFF`) y el JSON queda inválido.
+- El tag `:local` es mutable y con `imagePullPolicy: IfNotPresent` el nodo no baja una versión nueva. El pipeline despliega por digest; a mano, usar `kubectl set image ...@sha256:...`.
 
 ## Validación local
 
@@ -88,7 +111,13 @@ docker compose ps              # php y nginx deben quedar "healthy"
 docker compose logs php        # "configuracion escrita en /tmp/aurora/config.php"
 ```
 
-Abre http://localhost:8080. Si la base de datos es nueva, instala WordPress con un usuario de prueba y activa WooCommerce en *Plugins*.
+Si la base de datos es nueva, instala WordPress (el instalador web está bloqueado, igual que en GKE):
+
+```powershell
+Get-Content bin/install-wordpress.php -Raw | docker compose exec -T php php -- http://localhost:8080 > credenciales-local.txt
+```
+
+Abre http://localhost:8080/wp-admin/ con el usuario y la contraseña de `credenciales-local.txt` (no lo subas al repo; bórralo después de guardar la contraseña).
 
 ### 2. Checklist del issue
 
@@ -101,7 +130,7 @@ Abre http://localhost:8080. Si la base de datos es nueva, instala WordPress con 
 | 3 | No root (nginx) | `docker compose exec nginx id` | `uid=10001` |
 | 4 | Sin herramientas de build ni gestor de paquetes | `docker compose exec php sh -c "command -v gcc make git composer curl apk; echo fin"` | Solo imprime `fin` |
 | 5 | La tienda responde | `curl.exe -I http://localhost:8080/` | `200` (o `302` a la instalación) |
-| 6 | XML-RPC bloqueado | `curl.exe -I http://localhost:8080/xmlrpc.php` | `403` |
+| 6 | XML-RPC e instalador bloqueados | `curl.exe -I http://localhost:8080/xmlrpc.php` y `/wp-admin/install.php` | `403` |
 | 7 | Sin versión en cabeceras | `curl.exe -I http://localhost:8080/` | `Server: nginx` sin número; sin `X-Powered-By` |
 | 8 | Cabeceras de seguridad | mismo comando | `X-Content-Type-Options`, `X-Frame-Options`, `Content-Security-Policy`, `X-Request-ID` |
 | 9 | Archivos sensibles | `curl.exe -I http://localhost:8080/readme.html` y `/.env`, `/wp-config.php`, `/wp-content/plugins/woocommerce/readme.txt` | `403` |
