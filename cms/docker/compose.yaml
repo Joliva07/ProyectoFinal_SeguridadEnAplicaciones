@@ -1,0 +1,82 @@
+# AuroraShop — entorno LOCAL de pruebas (issue #40)
+# No es produccion: produccion se despliega en GKE por el pipeline (#43).
+#
+# Simula el pod de GKE: nginx comparte la red de php (network_mode: service:php),
+# igual que dos contenedores del mismo pod se ven por 127.0.0.1.
+#
+# Uso:  cp env.example .env   (y edita las contrasenas)
+#       docker compose up -d --build
+#       http://localhost:8080
+
+name: aurorashop-local
+
+x-hardening: &hardening
+  read_only: true
+  cap_drop: [ALL]
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  db:
+    # Misma version mayor que Cloud SQL (MySQL 8)
+    image: mysql:8.0.46
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?define MYSQL_ROOT_PASSWORD en .env}
+      MYSQL_DATABASE: ${DB_NAME:-aurorashop}
+      MYSQL_USER: ${DB_USER:-aurora_app}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?define DB_PASSWORD en .env}
+    volumes:
+      - db-data:/var/lib/mysql
+    # Sin puertos publicados: solo php la alcanza por la red interna
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    security_opt:
+      - no-new-privileges:true
+
+  php:
+    <<: *hardening
+    build:
+      context: .
+      target: php
+    image: aurorashop/cms-php:local
+    environment:
+      AURORA_ENV: local
+      AURORA_SECRETS_SOURCE: env
+      DB_HOST: db
+      DB_NAME: ${DB_NAME:-aurorashop}
+      DB_USER: ${DB_USER:-aurora_app}
+      DB_PASSWORD: ${DB_PASSWORD:?define DB_PASSWORD en .env}
+      WP_HOME: http://localhost:8080
+      WP_TABLE_PREFIX: ${WP_TABLE_PREFIX:-aur_}
+    tmpfs:
+      - /tmp:uid=10001,gid=10001,mode=0700
+      - /run/aurora:uid=10001,gid=10001,mode=0700
+    volumes:
+      - uploads:/srv/aurora/html/wp-content/uploads
+    # Solo en localhost de tu maquina (nginx escucha en 8080 dentro de esta red)
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  nginx:
+    <<: *hardening
+    build:
+      context: .
+      target: nginx
+    image: aurorashop/cms-nginx:local
+    network_mode: "service:php"
+    tmpfs:
+      - /tmp:uid=10001,gid=10001,mode=0700
+    volumes:
+      - uploads:/srv/aurora/html/wp-content/uploads:ro
+    depends_on:
+      - php
+
+volumes:
+  db-data:
+  uploads:
