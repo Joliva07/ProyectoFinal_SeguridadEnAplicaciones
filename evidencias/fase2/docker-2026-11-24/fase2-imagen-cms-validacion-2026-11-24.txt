@@ -1,0 +1,101 @@
+# Issue #40 - validacion local de la imagen del CMS (adaptada al Deployment de infra/k8s)
+# Fecha: 2026-11-25T02:54:26Z | Docker version 29.8.1, build 4a63305 | rama fase2/horacio-imagen-cms @ 1fa1ae6
+# Imagenes base: php:8.3.37-fpm-alpine3.24 wordpress:7.1.5-php8.3-fpm-alpine nginx:1.30.8-alpine alpine:3.24.4 | WooCommerce 11.3.1
+
+## 0. Build igual que .github/workflows/security-ci.yml (contexto cms/, targets php-runtime y nginx-runtime)
+build OK
+
+## 0b. Trivy 0.76.2 como en CI (--severity CRITICAL --ignore-unfixed --exit-code 1) y HIGH informativo
+aurorashop-php:ci -> CRITICAL exit=0 (0 = pasa) | HIGH con fix: 0
+aurorashop-nginx:ci -> CRITICAL exit=0 (0 = pasa) | HIGH con fix: 0
+
+## 1. Tamano (criterio: < 400 MB)
+aurorashop-php:ci 387581505 bytes
+aurorashop-nginx:ci 334839663 bytes
+
+## 2-3. Usuario (criterio: no root)
+php:   uid=10001 gid=10001 groups=10001
+nginx: uid=10001 gid=10001 groups=10001
+
+## 4. Herramientas de build / gestor de paquetes en la imagen php
+ausente:  gcc
+ausente:  g++
+ausente:  make
+ausente:  git
+ausente:  composer
+ausente:  curl
+ausente:  apk
+
+## 5. La tienda responde (WordPress + WooCommerce activo)
+GET / -> 200
+GET /?post_type=product -> 200
+GET /wp-json/wc/store/v1/products -> 200
+GET /wp-content/uploads/woocommerce-placeholder-150x150.webp -> 200
+
+## 6. XML-RPC (criterio: 403/405)
+GET  /xmlrpc.php -> 403
+POST /xmlrpc.php -> 403
+
+## 7-8. Cabeceras (sin version de servidor ni X-Powered-By)
+Server: nginx
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+Referrer-Policy: strict-origin-when-cross-origin
+Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(self)
+Content-Security-Policy: frame-ancestors 'self'; base-uri 'self'; object-src 'none'
+X-Request-ID: a154a901cfc6d6b50914355631185892
+
+## 9. Archivos sensibles (criterio: 403/404)
+/readme.html -> 403
+/license.txt -> 403
+/wp-config.php -> 403
+/.env -> 403
+/.git/config -> 403
+/wp-content/debug.log -> 403
+/wp-content/plugins/woocommerce/readme.txt -> 403
+/wp-content/themes/twentytwentyfive/readme.txt -> 403
+/backup.sql -> 403
+/wp-content/uploads/wc-logs/x.log -> 403
+/wp-content/uploads/woocommerce_uploads/ -> 403
+/wp-content/plugins/woocommerce/woocommerce.php -> 403
+
+## 10. Codigo de solo lectura
+touch: /var/www/html/prueba: Read-only file system
+touch: /var/www/wp-config.php: Read-only file system
+touch: /usr/local/bin/x: Read-only file system
+touch: /run/aurora/x: Read-only file system
+
+## 11. Secretos fuera del entorno del proceso
+ocurrencias de PASSWORD en /proc/1/environ: 0
+config generada: /tmp/aurora/config.php 400
+
+## 12. PHP subido a uploads no se ejecuta (criterio: 403)
+GET /wp-content/uploads/prueba.php -> 403
+
+## 13. Rate limit en wp-login.php (20 peticiones seguidas)
+200 200 200 200 200 200 429 429 429 429 429 429 429 429 429 429 429 429 200 429 
+
+## 14. IP real: CF-Connecting-IP falsificado desde un origen no confiable se ignora
+"remote_addr":"172.21.0.1"
+(esperado: IP de la red de Docker, no 6.6.6.6)
+
+## Extra: PHP-FPM solo en localhost
+tcp        0      0 127.0.0.1:9000          0.0.0.0:*               LISTEN      
+
+## Extra: configuracion PHP efectiva
+expose_php = ''
+allow_url_fopen = ''
+allow_url_include = ''
+display_errors = ''
+cgi.fix_pathinfo = false
+open_basedir = '/var/www/:/tmp/:/run/aurora/'
+disable_functions = 'exec,passthru,shell_exec,system,proc_open,popen,pcntl_exec,pcntl_fork,dl,show_source,highlight_file,posix_kill,posix_setuid,posix_setgid,posix_setpgid,posix_setsid,posix_mkfifo'
+
+## Extra: errores PHP durante la prueba
+ninguno
+
+## Extra: escaneos del pipeline ejecutados en local (2026-11-25T03:00:16Z)
+gitleaks v8.30.1 (git --redact, historial completo + cambios staged): no leaks found
+semgrep 1.186.0 (p/php, p/owasp-top-ten, p/secrets, --error): 0 hallazgos en 121 archivos, exit 0
+  Excepcion documentada: generic.nginx.security.request-host-used en log_format de nginx.conf
+  ($host solo se registra con escape=json; no se usa para enrutar ni redirigir).

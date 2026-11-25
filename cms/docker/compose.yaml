@@ -1,0 +1,94 @@
+# AuroraShop — entorno LOCAL de pruebas (issue #40)
+# No es produccion: produccion se despliega en GKE por el pipeline (security-ci.yml).
+#
+# Imita el pod de infra/k8s/base/deployment.yaml:
+#   - nginx comparte la red de php (network_mode: service:php), como dos contenedores del pod.
+#   - mismas rutas y mismos directorios escribibles (tmpfs = emptyDir del Deployment).
+#   - mismas variables de entorno; en local la BD usa contrasena en vez de IAM y
+#     los secretos vienen de .env (AURORA_SECRETS_SOURCE=env) en vez del CSI driver.
+#
+# Uso (desde cms/docker):
+#   Copy-Item env.example .env     # y edita las contrasenas
+#   docker compose up -d --build
+#   http://localhost:8080
+
+name: aurorashop-local
+
+x-hardening: &hardening
+  read_only: true
+  cap_drop: [ALL]
+  security_opt:
+    - no-new-privileges:true
+
+x-build: &build
+  # Mismo contexto que el pipeline: cms/
+  context: ..
+  dockerfile: docker/Dockerfile
+
+services:
+  db:
+    # Misma version mayor que Cloud SQL (MySQL 8)
+    image: mysql:8.0.46
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?define MYSQL_ROOT_PASSWORD en .env}
+      MYSQL_DATABASE: ${DB_NAME:-aurorashop}
+      MYSQL_USER: ${DB_USER:-aurora_app}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?define DB_PASSWORD en .env}
+    volumes:
+      - db-data:/var/lib/mysql
+    # Sin puertos publicados: solo php la alcanza por la red interna
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    security_opt:
+      - no-new-privileges:true
+
+  php:
+    <<: *hardening
+    build:
+      <<: *build
+      target: php-runtime
+    image: aurorashop/cms-php:local
+    environment:
+      WP_ENVIRONMENT_TYPE: local
+      AURORA_SECRETS_SOURCE: env
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_NAME: ${DB_NAME:-aurorashop}
+      DB_USER: ${DB_USER:-aurora_app}
+      DB_PASSWORD: ${DB_PASSWORD:?define DB_PASSWORD en .env}
+      WP_HOME: http://localhost:8080
+      WP_TABLE_PREFIX: ${WP_TABLE_PREFIX:-aur_}
+    # Igual que el pod: solo /tmp es escribible (emptyDir php-tmp)
+    tmpfs:
+      - /tmp:uid=10001,gid=10001,mode=0700
+    volumes:
+      - uploads:/var/www/html/wp-content/uploads
+    # Solo en localhost de tu maquina (nginx escucha en 8080 dentro de esta red)
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  nginx:
+    <<: *hardening
+    build:
+      <<: *build
+      target: nginx-runtime
+    image: aurorashop/cms-nginx:local
+    network_mode: "service:php"
+    # Igual que el pod: emptyDir nginx-cache y nginx-run
+    tmpfs:
+      - /var/cache/nginx:uid=10001,gid=10001,mode=0700
+      - /var/run:uid=10001,gid=10001,mode=0755
+    volumes:
+      - uploads:/var/www/html/wp-content/uploads:ro
+    depends_on:
+      - php
+
+volumes:
+  db-data:
+  uploads:

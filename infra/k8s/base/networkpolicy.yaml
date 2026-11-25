@@ -41,18 +41,38 @@ spec:
           port: 53
         - protocol: TCP
           port: 53
+    # El cluster usa Cloud DNS (clusterDns: CLOUD_DNS) con NodeLocal DNSCache: los pods resuelven
+    # en 169.254.20.10 y 169.254.169.254, no en los pods kube-dns. Solo DNS (53).
+    - to:
+        - ipBlock:
+            cidr: 169.254.20.10/32
+        - ipBlock:
+            cidr: 169.254.169.254/32
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Cloud SQL por IP privada: el Auth Proxy se conecta a la instancia en 3307, no en 3306
     - to:
         - ipBlock:
             cidr: 10.40.0.0/20
       ports:
         - protocol: TCP
-          port: 3306
+          port: 3307
     - to:
         - ipBlock:
             cidr: 199.36.153.4/30
       ports:
         - protocol: TCP
           port: 443
+    # Workload Identity en Dataplane V2: el metadata server de GKE atiende en 169.254.169.252:988
+    - to:
+        - ipBlock:
+            cidr: 169.254.169.252/32
+      ports:
+        - protocol: TCP
+          port: 988
     - to:
         - ipBlock:
             cidr: 169.254.169.254/32
