@@ -119,16 +119,19 @@ spec:
                   key: WP_ENVIRONMENT_TYPE
             - name: WP_SECRET_DIR
               value: /var/run/aurorashop-secrets
+          # PHP-FPM escucha solo en 127.0.0.1:9000 (nginx lo alcanza dentro del pod). Un tcpSocket
+          # va al IP del pod y siempre falla, asi que se comprueba desde dentro del contenedor.
           readinessProbe:
-            tcpSocket:
-              port: fpm
-            periodSeconds: 5
-            timeoutSeconds: 2
+            exec:
+              command: ["php", "-r", "exit(@fsockopen('127.0.0.1', 9000) ? 0 : 1);"]
+            periodSeconds: 10
+            timeoutSeconds: 3
           livenessProbe:
-            tcpSocket:
-              port: fpm
+            exec:
+              command: ["php", "-r", "exit(@fsockopen('127.0.0.1', 9000) ? 0 : 1);"]
+            initialDelaySeconds: 10
             periodSeconds: 15
-            timeoutSeconds: 2
+            timeoutSeconds: 3
           resources:
             requests:
               cpu: 500m
@@ -162,19 +165,32 @@ spec:
             - "--auto-iam-authn"
             - "--address=127.0.0.1"
             - "--port=3306"
+            # El proxy escucha solo en 127.0.0.1, asi que un tcpSocket al IP del pod siempre falla.
+            # Se usan los endpoints de salud propios del proxy (solo HTTP de estado, sin datos).
+            - "--health-check"
+            - "--http-address=0.0.0.0"
+            - "--http-port=9801"
             - "aurorashop-sec-umg:us-central1:aurorashop-demo-mysql"
           ports:
-            - name: mysql
-              containerPort: 3306
+            - name: proxy-health
+              containerPort: 9801
               protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /startup
+              port: proxy-health
+            periodSeconds: 2
+            failureThreshold: 30
           readinessProbe:
-            tcpSocket:
-              port: mysql
+            httpGet:
+              path: /readiness
+              port: proxy-health
             periodSeconds: 5
             timeoutSeconds: 2
           livenessProbe:
-            tcpSocket:
-              port: mysql
+            httpGet:
+              path: /liveness
+              port: proxy-health
             initialDelaySeconds: 10
             periodSeconds: 15
             timeoutSeconds: 2
