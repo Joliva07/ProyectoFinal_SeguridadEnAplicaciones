@@ -5,8 +5,7 @@ Token con permisos de DNS, WAF/rulesets, Logpush y Access (lectura); sin Zone Se
 
 ## DNS
 
-- 29 registros existentes; todos los servicios del VPS `144.217.164.56` y `blog` a GitHub Pages.
-- 0 registros para `aurorashop`, `admin.aurorashop` o `staging.aurorashop`.
+- 32 registros: los 29 previos más los tres de AuroraShop, proxied a las IPs del LB (`34.8.197.115` demo/admin, `136.68.90.143` staging).
 - Permiso de escritura verificado con `PATCH` a un ID inexistente: `81044 Record does not exist` (no `9109`), es decir, el token puede crear registros.
 
 ## WAF
@@ -29,8 +28,8 @@ Limitaciones del plan Free: 5 reglas custom, sin acción `log`, sin regex. W-04/
 
 ## Logpush
 
-- 0 jobs.
-- Bucket GCS pendiente de `terraform apply`; el IAM para `logpush@cloudflare-data.iam.gserviceaccount.com` ya está en el módulo `data`.
+- Ownership challenge validado (`result.valid=true`) sobre el bucket ya creado.
+- `POST /logpush/jobs` devuelve `1004 logpush is not enabled for this account`: el plan Free no incluye Logpush. Bucket e IAM quedan listos; se declara limitación.
 
 ## Origen
 
@@ -39,7 +38,11 @@ Limitaciones del plan Free: 5 reglas custom, sin acción `log`, sin regex. W-04/
 
 ## Bloqueos
 
-1. `terraform apply` (Javier/CI con WIF) para IPs del Ingress, buckets y Cloud Armor.
+1. Certificado Origin CA: se emite en el dashboard o con un token `Origin CA: Edit`. Sin él, Cloudflare responde 525/526.
 2. Token con Zone Settings: Edit para SSL Full (strict), TLS 1.2/1.3 y HSTS.
 3. Token con Access: Apps and Policies: Edit y la organización Zero Trust para `admin.` y `staging.`.
-4. Token con Origin CA: Edit para emitir el certificado sin pasar por el dashboard.
+4. Logpush: requiere plan con Logs (el Free devuelve `1004`).
+
+## Estado del origen
+
+`terraform apply` completó GKE/Cloud SQL/buckets/Cloud Armor y el DNS ya resuelve a Cloudflare. Las peticiones a `aurorashop.ancordss.me.uk` devuelven 525 porque el LB aún no tiene Ingress ni certificado; `admin`/`staging` no completan TLS por la misma causa.

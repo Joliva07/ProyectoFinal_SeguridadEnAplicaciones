@@ -157,7 +157,7 @@ gcloud storage ls --recursive \
 
 Nota: Cloudflare entrega gzip y GCS hace transcoding; para descargar comprimido usar `Accept-Encoding: gzip`. La alerta crítica del SIEM (#54) se valida contra estos eventos, no contra logs del LB.
 
-Estado 2026-11-24: 0 jobs de Logpush y el bucket `aurorashop-logs-archive-aurorashop-sec-umg-demo` aún no existe. El job se crea después de `terraform apply`; el IAM de `logpush@cloudflare-data.iam.gserviceaccount.com` ya está en Terraform.
+Estado 2026-11-24: el ownership challenge se validó (`result.valid=true`), pero crear el job devuelve `1004 logpush is not enabled for this account`. **Logpush no está incluido en el plan Free**; el bucket y el IAM quedan listos para cuando se habilite, y el SIEM usa por ahora logs de GCP/Cloud Armor. Se declara como limitación, no como control activo.
 
 ## 8. Reglas de borde que dependen del origen
 
@@ -223,7 +223,7 @@ Sin el paso del certificado, el Ingress queda en 526; sin DNS proxied, Cloud Arm
 | WAF custom | 5 reglas staged, `enabled=false` | Falta origen para smoke test |
 | Managed Free Ruleset | Staged, `enabled=false` | Falta origen para smoke test |
 | Access | 0 aplicaciones | Token sin organización Zero Trust |
-| Logpush | 0 jobs | Bucket listo; falta crear el job |
+| Logpush | Ownership validado; job no disponible (`1004`, plan Free) | Requiere plan con Logpush |
 | SSL/TLS/HSTS | Sin verificar | Token sin Zone Settings: Read/Edit |
 
 IPs: demo/admin `34.8.197.115`; staging `136.68.90.143`. Cloud SQL privado `10.40.0.3`. El resto de hosts de la zona no se tocó.

@@ -81,7 +81,7 @@ Son registros **A**: el contenido de un CNAME debe ser un hostname, no una IP. D
 - Rate limiting: 100 req/min por IP en el storefront; 10 req/min en `/wp-login.php` y `/xmlrpc.php`; 5 req/min en checkout.
 - Bot Fight Mode / Super Bot Fight Mode; Turnstile en login y checkout.
 - Cloudflare Access en `admin.` y `staging.` (política por correo del grupo).
-- Logpush → GCS `aurorashop-logs-archive-aurorashop-sec-umg-demo` (HTTP requests) para correlación en BigQuery. Terraform otorga `roles/storage.objectAdmin` a la cuenta documentada `logpush@cloudflare-data.iam.gserviceaccount.com`; no se usan claves JSON.
+- Logpush → GCS `aurorashop-logs-archive-aurorashop-sec-umg-demo` (HTTP requests) para correlación en BigQuery. Terraform otorga `roles/storage.objectAdmin` a `logpush@cloudflare-data.iam.gserviceaccount.com`; no se usan claves JSON. **Limitación:** el plan Free no habilita Logpush (`1004`); el job queda pendiente de un plan que lo incluya.
 - Certificado Origin CA único con SANs `aurorashop`, `admin.aurorashop` y `staging.aurorashop`, instalado como Secret `aurorashop-origin-tls` en los namespaces `aurorashop` y `staging` por un humano; CI no puede leer ni escribir Secrets.
 - Cache rules: no cachear `wp-admin`, `wp-json`, `cart`, `checkout`, `my-account`.
 
