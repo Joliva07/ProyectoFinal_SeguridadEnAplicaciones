@@ -17,7 +17,7 @@
 # Etapas:
 #   plugins     descarga y verifica WooCommerce (curl/unzip solo aqui)
 #   wordpress   imagen oficial, solo como fuente del nucleo de WordPress
-#   app         arbol final de /var/www con permisos ya aplicados
+#   app         arbol final de /var/www con permisos ya aplicados (incluye el tema hijo)
 #   extensions  compila extensiones PHP (compiladores solo aqui)
 #   php-runtime / nginx-runtime  imagenes finales
 #
@@ -67,13 +67,15 @@ COPY --from=plugins   /build/plugins/      /var/www/html/wp-content/plugins/
 COPY --from=plugins   /build/mu-plugins/   /var/www/html/wp-content/mu-plugins/
 COPY docker/wordpress/mu-plugins/          /var/www/html/wp-content/mu-plugins/
 COPY docker/wordpress/wp-config.aurora.php /var/www/wp-config.php
+# Tema hijo del storefront (#48): solo theme.json, plantillas de bloques y un patron con esc_url
+COPY theme-aurora/                         /var/www/html/wp-content/themes/aurora-child/
 
 RUN set -eu; \
     cd /var/www/html; \
     # Archivos que revelan version o no se usan
     rm -f readme.html license.txt wp-config-sample.php; \
     rm -rf wp-content/plugins/akismet wp-content/plugins/hello.php; \
-    find wp-content/themes -mindepth 1 -maxdepth 1 -type d ! -name twentytwentyfive -exec rm -rf {} +; \
+    find wp-content/themes -mindepth 1 -maxdepth 1 -type d ! -name twentytwentyfive ! -name aurora-child -exec rm -rf {} +; \
     mkdir -p wp-content/uploads; \
     # Codigo: root y solo lectura para el proceso
     chown -R root:root /var/www; \

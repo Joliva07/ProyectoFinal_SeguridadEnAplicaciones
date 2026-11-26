@@ -19,6 +19,7 @@ Dueño: **Horacio** · Insumo: `docs/03-devsecops/plugins-temas.md` · Issue #48
 | WooCommerce | 11.3.1 | 11.3.1 | 101 vulnerabilidades históricas (32 CVE), **0 afectan a 11.3.1**. Las más recientes ya corregidas: CVE-2026-125801 (< 11.3.0), CVE-2026-106608 (9.8.0 – < 11.2.0), CVE-2026-48888 (< 11.1.0) | 6.5 / 7.2 / 7.5 (corregidas) | Sí, la Store API (`/wp-json/wc/store/*`) y el checkout son públicos; por eso se exige estar en la última versión | No aplica | Mantener; actualizar por PR al salir una versión nueva | EV-48-01, EV-48-02 |
 | Two Factor (must-use) | 0.17.0 | 0.17.0 | 1 histórica: CVE-2026-100508 (< 0.17.0), consumo de recursos sin límite (CWE-770), **ya corregida en 0.17.0** | 5.3 (corregida) | El formulario de 2FA es público tras la contraseña | No aplica | Mantener | EV-48-01, EV-48-02 |
 | Twenty Twenty-Five (tema activo) | 1.5 | 1.5 | Ninguno registrado | — | — | No aplica | Mantener | EV-48-01, EV-48-02 |
+| Tema hijo AuroraShop (`aurora-child`, activo) | 1.0.0 | — | Sin hallazgos: Semgrep `p/php`, `p/owasp-top-ten`, `p/secrets` con 0 resultados en 7 archivos; revisión manual en §3.1 | — | Solo archivos estáticos (CSS, SVG, `theme.json`); su único PHP lo bloquea Nginx (403) | Revisión de código | Mantener | `cms/theme-aurora/`, EV-48-05 |
 | `aurora-hardening.php` (plugin propio, must-use) | repo | — | Sin hallazgos de Semgrep; revisión manual en §3 | — | Sí: login, REST y `?author=` | Pruebas de #44 | Mantener | `evidencias/fase2/hardening-cms-2026-11-25.md` |
 | Akismet | (imagen oficial) | — | No se usa (sin clave ni formularios de comentarios) | — | — | — | **Eliminado** en el `Dockerfile` | EV-48-03 |
 | Hello Dolly | (imagen oficial) | — | Plugin de ejemplo sin función | — | — | — | **Eliminado** | EV-48-03 |
@@ -46,7 +47,20 @@ Archivo: `cms/docker/wordpress/mu-plugins/aurora-hardening.php` (226 líneas, is
 - El bloqueo de login se cuenta por **usuario + IP**. Un atacante que rote IP no queda limitado por esta capa; lo cubren el rate limit de Nginx (10 por minuto por IP, ráfaga de 5) y el WAF de Cloudflare. A cambio, un atacante **no puede bloquear** a un usuario legítimo que entra desde otra IP.
 - La IP sale de `CF-Connecting-IP`, y Nginx solo la acepta de los rangos del balanceador de Google (`set_real_ip_from 35.191.0.0/16, 130.211.0.0/22`), así que no se puede falsificar desde fuera.
 
-**Tema hijo:** el plan prevé `aurora-child`, pero **todavía no existe** en el repositorio. La tienda usa Twenty Twenty-Five sin modificar. Si se crea, debe pasar la misma lista del §3 antes de entrar a la imagen.
+### 3.1 Revisión del tema hijo
+
+Carpeta: `cms/theme-aurora/` (en la imagen, `wp-content/themes/aurora-child/`). Tema hijo de bloques de Twenty Twenty-Five: hereda todas las plantillas y solo cambia colores, logo, encabezado, pie de página y portada.
+
+| Punto | Resultado |
+|---|---|
+| Código PHP | Un solo archivo (`patterns/header.php`) con una sola salida: la URL del logo, escapada con `esc_url(get_theme_file_uri(...))`. Sin `functions.php`, sin hooks, sin entrada de usuario, sin SQL |
+| Acceso directo | `defined('ABSPATH') \|\| exit;` y, además, Nginx responde 403 a cualquier `.php` dentro de `wp-content` (verificado) |
+| JavaScript | Ninguno propio. El carrito y la cuenta son bloques de WooCommerce |
+| Recursos externos | Ninguno: la tipografía (Manrope) viene del tema padre y el logo es un SVG local. No cambia la CSP ni agrega conexiones salientes |
+| Contenido | Plantillas `.html` de bloques con texto fijo; enlaces relativos (`/shop/`, `/my-account/`) |
+| SVG | El logo se sirve como `<img>`, así que el navegador no ejecuta scripts dentro del SVG. Los usuarios no pueden subir SVG (`upload_mimes` del #44) |
+| Análisis estático | Semgrep con las mismas reglas del pipeline: 0 hallazgos. Trivy `config` del `Dockerfile`: limpio |
+| Integridad | Entra solo con la imagen; el código queda propiedad de root y de solo lectura en el pod |
 
 ## 4. Riesgo de cadena de suministro
 
@@ -58,7 +72,7 @@ Archivo: `cms/docker/wordpress/mu-plugins/aurora-hardening.php` (226 líneas, is
 
 ## 5. Salida para el informe
 
-- **Superficie de terceros:** 1 plugin normal (WooCommerce), 1 plugin must-use de terceros (Two Factor), 1 tema. Más el plugin propio de hardening.
+- **Superficie de terceros:** 1 plugin normal (WooCommerce), 1 plugin must-use de terceros (Two Factor), 1 tema padre. Más el código propio: el plugin de hardening y el tema hijo.
 - **Con CVE que afecten a la versión instalada:** 0 de 4. Todos los componentes están en la **última versión publicada**.
 - **Eliminados:** Akismet, Hello Dolly y los temas por defecto inactivos, por no tener uso demostrable.
 - **No admitidos:** los plugins de pagos, envíos, antispam, SEO, caché y backup que contemplaba el plan. La demo usa los métodos de pago y envío del propio WooCommerce. Turnstile se aplica en el borde (Cloudflare), no como plugin.
@@ -71,3 +85,4 @@ Archivo: `cms/docker/wordpress/mu-plugins/aurora-hardening.php` (226 líneas, is
 | EV-48-02 | Correlación de CVE y últimas versiones | `evidencias/fase2/plugins-temas-2026-11-25.md` §2 |
 | EV-48-03 | Eliminación en la imagen | `cms/docker/Dockerfile`, etapa `app` |
 | EV-48-04 | WPScan del pipeline (umbral CVSS ≥ 7 superado) | Run `45750237868` de `security-ci.yml`, artefacto del job WPScan |
+| EV-48-05 | Revisión del tema hijo (Semgrep, Nginx 403 al PHP, sin recursos externos) | `evidencias/fase2/plugins-temas-2026-11-25.md` §4 |
