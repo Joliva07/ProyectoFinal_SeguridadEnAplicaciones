@@ -14,7 +14,9 @@ permissions:
 
 concurrency:
   group: security-ci-${{ github.ref }}
-  cancel-in-progress: true
+  # En PR se cancela el run viejo; en main cada run termina (cancelarlo a mitad del deploy
+  # puede dejar el kubectl apply a medias).
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   GCP_PROJECT_ID: aurorashop-sec-umg
@@ -78,11 +80,24 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
       - name: Enumerate installed plugins and themes
         env:
           WPSCAN_TOKEN: ${{ secrets.WPSCAN_TOKEN }}
           EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
         run: |
+          # El token gratuito permite 25 consultas al dia. En un push que no toca cms/ (nucleo,
+          # plugins, tema, Dockerfile) los componentes de WordPress no cambian: no se escanea.
+          # schedule y workflow_dispatch escanean siempre.
+          if [ "$EVENT_NAME" = "push" ] && [ -n "$BEFORE_SHA" ] \
+             && [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ] \
+             && git cat-file -e "${BEFORE_SHA}^{commit}" 2>/dev/null; then
+            if ! git diff --name-only "$BEFORE_SHA" "$GITHUB_SHA" | grep -q '^cms/'; then
+              echo "Sin cambios en cms/ entre ${BEFORE_SHA:0:7} y ${GITHUB_SHA:0:7}: WPScan omitido (no gasta cuota)."
+              exit 0
+            fi
+          fi
           if [ -z "$WPSCAN_TOKEN" ]; then
             echo "::error::Configura el secreto WPSCAN_TOKEN antes de ejecutar WPScan."
             exit 1
