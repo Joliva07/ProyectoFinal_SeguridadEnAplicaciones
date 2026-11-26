@@ -55,6 +55,7 @@ define('FORCE_SSL_ADMIN', $aurora['FORCE_SSL_ADMIN']);
 // --- Hardening ---
 define('DISALLOW_FILE_EDIT', true);          // sin editor de temas/plugins en wp-admin
 define('DISALLOW_FILE_MODS', true);          // sin instalar/actualizar plugins desde wp-admin (imagen inmutable)
+define('DISALLOW_UNFILTERED_HTML', true);    // nadie (ni admin) guarda HTML/JS sin filtrar: evita XSS almacenado (#44)
 define('AUTOMATIC_UPDATER_DISABLED', true);  // las actualizaciones llegan con una imagen nueva por CI
 define('WP_AUTO_UPDATE_CORE', false);
 
