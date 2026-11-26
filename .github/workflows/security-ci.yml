@@ -81,6 +81,7 @@ jobs:
       - name: Enumerate installed plugins and themes
         env:
           WPSCAN_TOKEN: ${{ secrets.WPSCAN_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           if [ -z "$WPSCAN_TOKEN" ]; then
             echo "::error::Configura el secreto WPSCAN_TOKEN antes de ejecutar WPScan."
@@ -90,9 +91,19 @@ jobs:
           # El JSON sale por stdout: el contenedor corre como uid 1000 y no puede escribir en el
           # directorio del runner. WPScan devuelve 5 cuando encuentra vulnerabilidades; el umbral
           # CVSS lo decide el script. Cualquier otro codigo distinto de 0 es un error del escaneo.
+          # Escaneo rapido en cada push (pasivo: solo lo que muestra la pagina, ~20 s) y completo el
+          # lunes (schedule) o a mano (workflow_dispatch): prueba miles de rutas y tarda ~20 min.
+          # Las versiones estan fijadas en el Dockerfile, asi que solo cambian con un PR.
+          mode_args=()
+          if [ "$EVENT_NAME" = "schedule" ] || [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "WPScan completo ($EVENT_NAME)"
+          else
+            echo "WPScan pasivo ($EVENT_NAME); el completo corre los lunes o con Run workflow"
+            mode_args=(--detection-mode passive --plugins-detection passive --themes-detection passive)
+          fi
           rc=0
           docker run --rm wpscanteam/wpscan:v4.1.0 \
-            --url "$DEMO_URL" --enumerate vp,vt \
+            --url "$DEMO_URL" --enumerate vp,vt "${mode_args[@]}" \
             --api-token "$WPSCAN_TOKEN" --format json --no-banner \
             > reports/wpscan.json || rc=$?
           if [ "$rc" -ne 0 ] && [ "$rc" -ne 5 ]; then
@@ -367,7 +378,13 @@ jobs:
         run: |
           # Con enlaces permanentes WordPress usa barra final; /shop responde 301 a /shop/.
           for path in /shop/ /my-account/; do
-            status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' "$DEMO_URL$path")
+            # Reintentos cortos: justo despues del rollout el balanceador puede tardar en marcar sanos los pods
+            for attempt in 1 2 3 4 5 6; do
+              status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' "$DEMO_URL$path")
+              [ "$status" = "200" ] && break
+              echo "${path}: HTTP ${status} (intento ${attempt}/6)"
+              sleep 10
+            done
             if [ "$status" != "200" ]; then
               echo "::error::${path} respondió HTTP ${status}; se esperaba 200."
               exit 1

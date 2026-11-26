@@ -3,6 +3,9 @@ kind: BackendConfig
 metadata:
   name: aurorashop-backend
 spec:
+  # Las conexiones abiertas a un pod que sale del balanceador terminan en vez de cortarse (502)
+  connectionDraining:
+    drainingTimeoutSec: 30
   healthCheck:
     checkIntervalSec: 15
     timeoutSec: 5
