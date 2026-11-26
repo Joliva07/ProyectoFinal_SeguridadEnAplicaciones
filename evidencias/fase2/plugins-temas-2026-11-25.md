@@ -52,3 +52,22 @@ Las 3 vulnerabilidades más recientes de WooCommerce, todas corregidas antes de 
 ## 3. WPScan del pipeline (EV-48-04)
 
 Run `45750237868` de `security-ci.yml` (merge del PR #67): el job *SCA · WPScan live inventory* terminó en verde con el umbral CVSS ≥ 7 de `.github/scripts/wpscan-threshold.py`. El reporte `wpscan.json` queda como artefacto del run.
+
+## 4. Tema hijo `aurora-child` (EV-48-05)
+
+Código en `cms/theme-aurora/`; el `Dockerfile` lo copia a `wp-content/themes/aurora-child/` y lo conserva al limpiar los temas por defecto.
+
+```text
+$ semgrep scan --config p/php --config p/owasp-top-ten --config p/secrets --error cms/theme-aurora
+Ran 66 rules on 7 files: 0 findings.
+
+$ trivy config --severity HIGH,CRITICAL --exit-code 1 cms/docker/Dockerfile
+'0': Clean (no security findings detected)
+
+$ curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/wp-content/themes/aurora-child/patterns/header.php
+403
+$ curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/wp-content/themes/aurora-child/assets/images/logo.svg
+200
+```
+
+`/`, `/shop/`, `/cart/` y `/my-account/` responden 200 con el tema activo y sin errores en el log de PHP. Ninguna URL externa en el tema (solo `schemas.wp.org` en el `$schema` de `theme.json`, que el navegador no carga).

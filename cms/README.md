@@ -7,7 +7,7 @@
 | `cms/theme-aurora/` | Tema hijo del storefront | Horacio |
 | `cms/composer.json` | Dependencias PHP fijadas (lockfile obligatorio) | Josue |
 
-Aún sin código: se construye en la fase 2 y se endurece en la fase 3.
+`cms/docker/` y `cms/theme-aurora/` ya tienen código (fase 2). `cms/plugin-aurora/` aún no existe: el hardening del CMS vive como must-use en `cms/docker/wordpress/mu-plugins/`.
 
 Reglas para cualquier PR de código:
 

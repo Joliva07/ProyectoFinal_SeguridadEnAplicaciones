@@ -1,0 +1,65 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/theme.json",
+	"version": 3,
+	"settings": {
+		"color": {
+			"palette": [
+				{ "slug": "base", "name": "Blanco", "color": "#FFFFFF" },
+				{ "slug": "contrast", "name": "Noche", "color": "#0B1026" },
+				{ "slug": "accent-1", "name": "Aurora turquesa", "color": "#14B8A6" },
+				{ "slug": "accent-2", "name": "Lavanda", "color": "#EDE9FE" },
+				{ "slug": "accent-3", "name": "Violeta", "color": "#6D28D9" },
+				{ "slug": "accent-4", "name": "Gris pizarra", "color": "#5B6478" },
+				{ "slug": "accent-5", "name": "Niebla", "color": "#F4F6FB" },
+				{ "slug": "accent-6", "name": "Borde", "color": "color-mix(in srgb, currentColor 14%, transparent)" }
+			],
+			"gradients": [
+				{
+					"slug": "aurora",
+					"name": "Aurora",
+					"gradient": "linear-gradient(135deg, #0B1026 0%, #1E1B4B 55%, #134E4A 100%)"
+				}
+			]
+		},
+		"layout": {
+			"contentSize": "720px",
+			"wideSize": "1240px"
+		}
+	},
+	"styles": {
+		"color": {
+			"background": "var:preset|color|base",
+			"text": "var:preset|color|contrast"
+		},
+		"typography": {
+			"fontFamily": "var:preset|font-family|manrope"
+		},
+		"elements": {
+			"heading": {
+				"typography": {
+					"fontWeight": "700",
+					"letterSpacing": "-0.02em"
+				}
+			},
+			"link": {
+				"color": { "text": "var:preset|color|accent-3" },
+				":hover": { "typography": { "textDecoration": "underline" } }
+			},
+			"button": {
+				"border": { "radius": "10px" },
+				"color": {
+					"background": "var:preset|color|contrast",
+					"text": "var:preset|color|base"
+				},
+				"typography": { "fontWeight": "600" },
+				":hover": {
+					"color": {
+						"background": "var:preset|color|accent-3",
+						"text": "var:preset|color|base"
+					}
+				}
+			}
+		},
+		"css": ".aurora-announce{font-size:.85rem;letter-spacing:.01em}.aurora-announce p{margin:0}.aurora-logo img{display:block;width:40px;height:40px}.aurora-hero{position:relative;overflow:hidden;border-radius:24px}.aurora-hero::before{content:\"\";position:absolute;inset:-40% -10% auto auto;width:70%;height:140%;background:radial-gradient(closest-side,rgba(20,184,166,.45),transparent),radial-gradient(closest-side at 30% 60%,rgba(139,92,246,.40),transparent);filter:blur(40px);pointer-events:none}.aurora-hero>*{position:relative}.aurora-eyebrow{display:inline-block;padding:.3rem .8rem;border-radius:999px;background:rgba(255,255,255,.12);font-size:.8rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase}.aurora-feature{border:1px solid var(--wp--preset--color--accent-6);border-radius:16px;height:100%}.aurora-feature .aurora-icon{font-size:1.6rem;line-height:1}.aurora-products .wc-block-product{border:1px solid var(--wp--preset--color--accent-6);border-radius:16px;padding:1rem;transition:box-shadow .2s ease,transform .2s ease}.aurora-products .wc-block-product:hover{box-shadow:0 12px 30px rgba(11,16,38,.10);transform:translateY(-2px)}.aurora-products .wc-block-components-product-image img{border-radius:12px}.wc-block-product .wp-block-post-title a,.wc-block-product .wp-block-post-title{color:var(--wp--preset--color--contrast);text-decoration:none}.wc-block-product .wp-block-post-title a:hover{color:var(--wp--preset--color--accent-3)}.wp-block-woocommerce-customer-account a,.wc-block-customer-account__account-icon{color:var(--wp--preset--color--contrast)!important}.aurora-footer a{color:inherit;text-decoration:none}.aurora-footer a:hover{text-decoration:underline}@media (prefers-reduced-motion:reduce){.aurora-products .wc-block-product{transition:none}.aurora-products .wc-block-product:hover{transform:none}}"
+	}
+}

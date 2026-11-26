@@ -1,0 +1,15 @@
+/*
+Theme Name: AuroraShop
+Theme URI: https://aurorashop.ancordss.me.uk/
+Description: Tema hijo de Twenty Twenty-Five para el storefront de AuroraShop (proyecto de Seguridad en Aplicaciones, UMG). Solo colores, tipografía, logo y plantillas de bloques: sin JavaScript propio ni dependencias externas.
+Author: Equipo AuroraShop
+Template: twentytwentyfive
+Version: 1.0.0
+Requires at least: 6.7
+Requires PHP: 8.3
+License: GPL-2.0-or-later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: aurora-child
+*/
+
+/* Los estilos viven en theme.json (styles.css); este archivo solo identifica el tema. */

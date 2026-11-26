@@ -12,7 +12,7 @@ Dueño: **Horacio** · Secciones 3.4 y 4.4 del informe · Componente de rúbrica
 | Tema Twenty Twenty-Five | 1.5 (última) | equipo de WordPress | 2026-05-20 | ninguno | storefront | mantener |
 | Plugin de pagos / envíos | — | — | — | — | se usan los métodos del propio WooCommerce | no admitido |
 | Antispam (Turnstile) | — | — | — | — | se aplica en Cloudflare, no como plugin | no admitido |
-| Tema hijo `aurora-child` | — | propio | — | — | todavía no existe | pendiente; debe pasar §2 antes de entrar |
+| Tema hijo `aurora-child` (activo) | 1.0.0 | propio | continua | — (Semgrep sin hallazgos) | diseño del storefront | mantener |
 | SEO / caché / backup | — | — | — | — | sin uso; los respaldos son de la infraestructura, no del CMS | no admitido |
 | Akismet, Hello Dolly, Twenty Twenty-Three/Four | — | — | — | — | sin uso | eliminados en el `Dockerfile` |
 
