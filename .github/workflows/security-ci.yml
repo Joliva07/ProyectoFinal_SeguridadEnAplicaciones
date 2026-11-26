@@ -331,9 +331,28 @@ jobs:
           export PATH="$kustomize_bin:$PATH"
           gcloud container fleet memberships get-credentials aurorashop-demo --project "$GCP_PROJECT_ID" --location global
           cd infra/k8s/overlays/demo
-          kustomize edit set image "aurorashop-php=${PHP_IMAGE}" "aurorashop-nginx=${NGINX_IMAGE}"
+          # La base ya renombra aurorashop-php/-nginx al registro con tag :local, asi que el
+          # reemplazo tiene que usar ese nombre; con el nombre corto kustomize lo ignoraba en
+          # silencio y se desplegaba :local en vez de la imagen verificada.
+          registry="${GAR_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GAR_REPOSITORY}"
+          kustomize edit set image \
+            "${registry}/wordpress-php=${PHP_IMAGE}" \
+            "${registry}/wordpress-nginx=${NGINX_IMAGE}"
+          rendered=$(kustomize build .)
+          for image in "$PHP_IMAGE" "$NGINX_IMAGE"; do
+            if ! grep -qF "image: ${image}" <<<"$rendered"; then
+              echo "::error::El manifiesto renderizado no usa ${image}; no se despliega."
+              exit 1
+            fi
+          done
           kubectl apply -k .
           kubectl rollout status deployment/aurorashop --namespace aurorashop --timeout=10m
+          deployed=$(kubectl get deployment aurorashop --namespace aurorashop \
+            -o jsonpath='{range .spec.template.spec.containers[*]}{.image}{"\n"}{end}')
+          echo "Imagenes desplegadas:"; echo "$deployed"
+          for image in "$PHP_IMAGE" "$NGINX_IMAGE"; do
+            grep -qxF "$image" <<<"$deployed" || { echo "::error::El Deployment no quedo con ${image}"; exit 1; }
+          done
 
   smoke:
     name: ZAP baseline and HTTP smoke
@@ -346,7 +365,8 @@ jobs:
           persist-credentials: false
       - name: Check storefront routes
         run: |
-          for path in /shop /my-account; do
+          # Con enlaces permanentes WordPress usa barra final; /shop responde 301 a /shop/.
+          for path in /shop/ /my-account/; do
             status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' "$DEMO_URL$path")
             if [ "$status" != "200" ]; then
               echo "::error::${path} respondió HTTP ${status}; se esperaba 200."
