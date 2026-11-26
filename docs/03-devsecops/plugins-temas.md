@@ -2,16 +2,21 @@
 
 Dueño: **Horacio** · Secciones 3.4 y 4.4 del informe · Componente de rúbrica 3
 
-## 1. Inventario (llenar con la tienda desplegada)
+## 1. Inventario (tienda desplegada, corte 2026-11-25)
 
 | Plugin / tema | Versión | Autor/mantenedor | Última actualización | CVE conocidos | Uso real | Decisión |
 |---|---|---|---|---|---|---|
-| WooCommerce | 9.x | Automattic | 2026-11 | ninguno crítico | tienda | mantener, actualización programada |
-| Plugin de pagos (sandbox) | x.y | tercero | — | — | checkout | evaluar; si no hay fix, reemplazar |
-| Plugin de envíos | x.y | tercero | — | — | checkout | evaluar |
-| Antispam (Turnstile) | x.y | tercero | — | — | formularios | mantener |
-| Tema hijo `aurora-child` | 1.0 | propio | continua | — | storefront | mantener |
-| SEO / caché / backup | — | — | — | — | — | eliminar si no se usa |
+| WooCommerce | 11.3.1 (última) | Automattic | 2026-11-19 | 0 que afecten a 11.3.1 (101 históricas, corregidas) | tienda, carrito, checkout | mantener; actualización por PR |
+| Two Factor (must-use) | 0.17.0 (última) | equipo de WordPress | 2026-09-28 | 0 que afecten (CVE-2026-100508 corregida en 0.17.0) | 2FA del personal (#44) | mantener |
+| `aurora-hardening` (must-use) | repo | propio | continua | — (Semgrep sin hallazgos) | hardening del CMS (#44) | mantener |
+| Tema Twenty Twenty-Five | 1.5 (última) | equipo de WordPress | 2026-05-20 | ninguno | storefront | mantener |
+| Plugin de pagos / envíos | — | — | — | — | se usan los métodos del propio WooCommerce | no admitido |
+| Antispam (Turnstile) | — | — | — | — | se aplica en Cloudflare, no como plugin | no admitido |
+| Tema hijo `aurora-child` | — | propio | — | — | todavía no existe | pendiente; debe pasar §2 antes de entrar |
+| SEO / caché / backup | — | — | — | — | sin uso; los respaldos son de la infraestructura, no del CMS | no admitido |
+| Akismet, Hello Dolly, Twenty Twenty-Three/Four | — | — | — | — | sin uso | eliminados en el `Dockerfile` |
+
+Detalle de CVE, alcanzabilidad y evidencias: `docs/04-ciberdefensa/evaluacion-plugins.md`.
 
 Regla: **todo plugin que no tenga uso demostrable se elimina**. Cada plugin activo debe tener: versión fija, justificación, CVE revisados y plan de actualización.
 
