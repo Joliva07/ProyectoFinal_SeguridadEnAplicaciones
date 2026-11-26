@@ -367,7 +367,13 @@ jobs:
         run: |
           # Con enlaces permanentes WordPress usa barra final; /shop responde 301 a /shop/.
           for path in /shop/ /my-account/; do
-            status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' "$DEMO_URL$path")
+            # Reintentos cortos: justo despues del rollout el balanceador puede tardar en marcar sanos los pods
+            for attempt in 1 2 3 4 5 6; do
+              status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' "$DEMO_URL$path")
+              [ "$status" = "200" ] && break
+              echo "${path}: HTTP ${status} (intento ${attempt}/6)"
+              sleep 10
+            done
             if [ "$status" != "200" ]; then
               echo "::error::${path} respondió HTTP ${status}; se esperaba 200."
               exit 1
