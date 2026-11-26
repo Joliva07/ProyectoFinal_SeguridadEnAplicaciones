@@ -34,21 +34,27 @@ FROM ${ALPINE_IMAGE} AS plugins
 ARG WOOCOMMERCE_VERSION=11.3.1
 # SHA-256 del zip. Al cambiar la version, dejar vacio: el build imprime el hash para fijarlo.
 ARG WOOCOMMERCE_SHA256="1502600c738840f7f9ebfa2f11e1aaff087221a5fc5a2006c51be2d874ae2a09"
+# 2FA (TOTP) del equipo de WordPress; se instala como must-use para que no se pueda desactivar (#44)
+ARG TWO_FACTOR_VERSION=0.17.0
+ARG TWO_FACTOR_SHA256="4d1b0f8e5d82e24876c2b4e86f119122e28a8dbaf76dfde495173226c3356f37"
 
 RUN apk add --no-cache curl unzip
 
 WORKDIR /build
+# fetch <slug> <version> <sha256> <destino>: descarga de wordpress.org, verifica y descomprime
 RUN set -eu; \
-    curl -fsSL --proto '=https' --tlsv1.2 -o woocommerce.zip \
-      "https://downloads.wordpress.org/plugin/woocommerce.${WOOCOMMERCE_VERSION}.zip"; \
-    if [ -n "${WOOCOMMERCE_SHA256}" ]; then \
-      echo "${WOOCOMMERCE_SHA256}  woocommerce.zip" | sha256sum -c -; \
-    else \
-      echo "AVISO: WOOCOMMERCE_SHA256 vacio; hash calculado:" >&2; sha256sum woocommerce.zip >&2; \
-    fi; \
-    mkdir -p plugins; \
-    unzip -q woocommerce.zip -d plugins; \
-    rm -f woocommerce.zip
+    fetch() { \
+      curl -fsSL --proto '=https' --tlsv1.2 -o "$1.zip" \
+        "https://downloads.wordpress.org/plugin/$1.$2.zip"; \
+      if [ -n "$3" ]; then \
+        echo "$3  $1.zip" | sha256sum -c -; \
+      else \
+        echo "AVISO: SHA256 de $1 vacio; hash calculado:" >&2; sha256sum "$1.zip" >&2; \
+      fi; \
+      mkdir -p "$4"; unzip -q "$1.zip" -d "$4"; rm -f "$1.zip"; \
+    }; \
+    fetch woocommerce "${WOOCOMMERCE_VERSION}" "${WOOCOMMERCE_SHA256}" plugins; \
+    fetch two-factor  "${TWO_FACTOR_VERSION}"  "${TWO_FACTOR_SHA256}"  mu-plugins
 
 # ---------------------------------------------------------------------------
 FROM ${WORDPRESS_IMAGE} AS wordpress
@@ -58,6 +64,8 @@ FROM ${ALPINE_IMAGE} AS app
 
 COPY --from=wordpress /usr/src/wordpress   /var/www/html
 COPY --from=plugins   /build/plugins/      /var/www/html/wp-content/plugins/
+COPY --from=plugins   /build/mu-plugins/   /var/www/html/wp-content/mu-plugins/
+COPY docker/wordpress/mu-plugins/          /var/www/html/wp-content/mu-plugins/
 COPY docker/wordpress/wp-config.aurora.php /var/www/wp-config.php
 
 RUN set -eu; \
