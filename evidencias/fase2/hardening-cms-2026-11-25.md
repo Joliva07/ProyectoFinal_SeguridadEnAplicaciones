@@ -11,12 +11,12 @@ configuración que en GKE. Sin contraseñas ni secretos en este documento.
 | Versión en HTML | `curl -s / \| grep generator` | `WordPress 7.1.5`, `WooCommerce 11.3.1` | Sin `<meta generator>` |
 | Versión en assets | `curl -s / \| grep -o '?ver=...'` | `?ver=7.1.5`, `?ver=11.3.1` | Token opaco (`?ver=17d65cfe6b`) |
 | Versión en el feed | `curl -s /feed/ \| grep generator` | `wordpress.org/?v=7.1.5` | Sin versión |
-| Enumeración por autor | `curl -I /?author=1` | `301 → /author/horacio-admin/` | `404` |
+| Enumeración por autor | `curl -I /?author=1` | `301 → /author/<usuario-admin>/` | `404` |
 | Sitemap de usuarios | `curl -I /wp-sitemap-users-1.xml` | `200` | `404` |
 | REST de usuarios | `curl -I /wp-json/wp/v2/users` | `403` (solo por el WAF) | `401` |
 | REST por ruta alterna | `curl -I '/?rest_route=/wp/v2/users'` | **`200` (evade el WAF)** | `401` |
 | oEmbed | `curl -s /wp-json/oembed/1.0/embed?url=/` | Incluye `author_name` | Sin autor |
-| Mensaje de login | `POST /wp-login.php` con usuario inexistente / existente | "The username noexiste is not registered" / "The password for horacio-admin is incorrect" | "usuario o contraseña incorrectos" en ambos casos |
+| Mensaje de login | `POST /wp-login.php` con usuario inexistente / existente | "The username noexiste is not registered" / "The password for <usuario-admin> is incorrect" | "usuario o contraseña incorrectos" en ambos casos |
 | Olvido de contraseña | `POST /wp-login.php?action=lostpassword` | Distinto si la cuenta existe | `302 → ?checkemail=confirm` siempre |
 | Bloqueo por intentos | 5 fallos y luego la contraseña correcta | Sin bloqueo en WordPress (solo rate limit de Nginx) | Rechaza incluso la contraseña correcta durante 15 min (usuario + IP) |
 | 2FA en personal | Login de administrador sin 2FA | Entra directo | Solo puede abrir su perfil hasta activar TOTP |
