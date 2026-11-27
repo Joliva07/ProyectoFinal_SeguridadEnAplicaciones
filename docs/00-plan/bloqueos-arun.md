@@ -46,8 +46,31 @@ Texto listo para la issue o el grupo:
 > `roles/bigquery.jobUser`, `roles/monitoring.alertPolicyEditor`, `roles/monitoring.notificationChannelEditor`, `roles/logging.configWriter` y `roles/container.developer` (o un rol con `pods/exec` en `aurorashop`).
 > Con eso ejecuto las consultas del SIEM, creo las alertas y hago las pruebas de detección. Detalle en `docs/00-plan/bloqueos-arun.md`.
 
-## 4. Historial
+## 4. Pedido de aprobación a James (B-10)
+
+Comentario listo para la #56:
+
+> @Ancordss, según el §1 de `docs/05-operaciones/tratamiento-riesgo.md`, aceptar un riesgo requiere tu aprobación y una fecha de revisión. Para cerrar esta issue necesito que apruebes (o rechaces) los 7 riesgos aceptados del §4:
+>
+> | # | Riesgo / hallazgo | Por qué se acepta | Revisión |
+> |---|---|---|---|
+> | 1 | **R-25** Cumplimiento del proveedor | Se transfiere a Google Cloud (certificaciones y SLA); no es mitigable en el curso | 9-dic |
+> | 2 | **R-28** Un solo operador de Cloudflare | Tú defines el acceso a la zona; con un SLA de cambios de 24 h es operable | 9-dic |
+> | 3 | **Cobertura parcial del plan Free** | W-07, W-08 y W-10 y Logpush requieren plan pago; se compensan con `limit_req` de Nginx, Cloud Armor y la lógica de la app | 9-dic |
+> | 4 | **H-10** Cookies sin `SameSite` explícito | Los navegadores aplican `Lax` por defecto y toda acción exige nonce | 9-dic |
+> | 5 | **P-12** `wp-cron.php` público (temporal) | Carga baja; Horacio lo reemplaza por un CronJob antes del cierre | 9-dic |
+> | 6 | **S-03** Cloud SQL con `ENCRYPTED_ONLY` | El pod entra por `cloud-sql-proxy` con mTLS, IP privada e IAM; exigir certificado de cliente no añade protección | 9-dic |
+> | 7 | **S-07** Binary Authorization desactivado | Rompe el bootstrap; se compensa con el deploy por digest (PR #67) y WIF limitado a `main` | 9-dic |
+>
+> Para responder, basta con un comentario aquí: **"Apruebo 1–7"**, o indica cuáles no apruebas y por qué. Lo que no apruebes pasa a "Mitigar" con responsable y plazo.
+>
+> Aparte, hay cuatro hallazgos abiertos a tu nombre que bajan el residual del heatmap cuando se cierren: **P-07** (TLS mínimo 1.2; hoy el borde acepta 1.0 y 1.1), **P-08** (HSTS), **P-10** (borrar el DNS de `staging-aurorashop`) y **H-08** (Cloudflare Access en `admin-aurorashop`). La prueba de cierre de cada uno está en el §5.
+
+Cuando James responda: pegar el enlace al comentario en la fila B-10, cambiar los "pendiente de aprobación" de `tratamiento-riesgo.md` §2 y §4 por la fecha de la aprobación, y cerrar la #56.
+
+## 5. Historial
 
 | Fecha | Cambio | Autor |
 |---|---|---|
 | 2026-11-26 | Registro inicial: B-01..B-12 | Arun |
+| 2026-11-26 | Texto del pedido de aprobación a James (B-10) | Arun |
