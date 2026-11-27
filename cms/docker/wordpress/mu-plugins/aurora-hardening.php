@@ -224,3 +224,13 @@ add_filter('upload_mimes', static function (): array {
         'csv'          => 'text/csv',
     ];
 }, 99);
+
+/* -------------------------------------------------------------------------
+ * 7. Descargas: el enlace no basta, hay que iniciar sesion (#46, H-09)
+ *    Por defecto WooCommerce trata el enlace de descarga como una llave: quien lo
+ *    tenga (correo reenviado, captura) descarga el archivo sin cuenta. Se fuerza
+ *    "las descargas requieren iniciar sesion"; WooCommerce comprueba ademas que el
+ *    usuario sea el dueno del pedido.
+ * ---------------------------------------------------------------------- */
+
+add_filter('pre_option_woocommerce_downloads_require_login', static fn (): string => 'yes');
