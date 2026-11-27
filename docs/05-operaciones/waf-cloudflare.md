@@ -11,9 +11,9 @@ Especifica: **Arun** · Aplica: **James** (único con Cloudflare) · Componente 
 | 1 | Cloudflare Managed Free Ruleset | Payloads conocidos | **Activo** (2026-11-25) |
 | 2 | Reglas custom Cloudflare | Lógica de WordPress/WooCommerce | **5 reglas activas** |
 | 3 | Rate limiting | Fuerza bruta, card testing, scraping | **Activo**: 1 regla Free (login 2/10s) |
-| 4 | Bot management / Turnstile | Automatización en login y checkout | Pendiente: configurar en dashboard |
+| 4 | Bot management / Turnstile | Automatización en login y checkout | **Bot Fight Mode activo** (2026-11-27); Turnstile en checkout pendiente |
 | 5 | Cloud Armor | Segunda línea en el LB | **Activo**: 403 a origen directo |
-| 6 | Cloudflare Access | Admin y staging fuera de Internet | Pendiente: token sin acceso a la organización Zero Trust |
+| 6 | Cloudflare Access | Admin y staging fuera de Internet | **Activo en `admin-aurorashop`** (2026-11-27); `staging` sin registro DNS (P-10) |
 
 ### 1.1 Estado aplicado el 2026-11-25
 
@@ -60,8 +60,8 @@ En Free no existe la acción `log`; las reglas se validaron con un backend tempo
 
 ## 4. Cabeceras y TLS
 
-- HSTS `max-age=31536000; includeSubDomains` (preload al cierre).
-- TLS mínimo 1.2, 1.3 activo, OCSP stapling; Full (strict).
+- HSTS `max-age=31536000` **configurado el 2026-11-27 sin `includeSubDomains`** (decisión del operador por otros subdominios de la zona); preload al cierre.
+- TLS mínimo 1.2 **aplicado el 2026-11-27** (TLS 1.0/1.1 rechazados), 1.3 activo, OCSP stapling; Full (strict).
 - CSP del storefront: `default-src 'self'; frame-ancestors 'none'` (ajustar inline de WooCommerce o usar nonce).
 - CORS: origen exacto; nunca `*` con credenciales.
 - Eliminar `Server`, `X-Powered-By`, `X-Pingback`, `Link: <...wp-json...>`.

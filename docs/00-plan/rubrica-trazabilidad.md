@@ -19,7 +19,7 @@ Cada criterio se mapea a un artefacto verificable. El estado se actualiza en cad
 | Diagrama de arquitectura de seguridad | `docs/02-arquitectura/arquitectura-seguridad.md` + `diagramas/` | C4 + checkout con API Gateway/WAF/IAM/cifrado | pendiente |
 | SAST/SCA integrados | `docs/03-devsecops/sast-sca.md` | Runs de Actions con Semgrep, WPScan, composer audit | pendiente |
 | Análisis de IaC | `docs/03-devsecops/iac-hardening.md` | Checkov/tfsec antes/después sobre Terraform y K8s | pendiente |
-| Menor privilegio y cifrado | `arquitectura-seguridad.md` §4–5 | Matriz IAM/RBAC, CMEK y TLS 1.3 | pendiente |
+| Menor privilegio y cifrado | `arquitectura-seguridad.md` secciones 4-5 | Matriz IAM/RBAC, CMEK y TLS 1.3 | pendiente |
 | Contenedores y K8s | `docs/03-devsecops/contenedores-k8s.md` + `docs/04-ciberdefensa/evaluacion-contenedores.md` | Trivy, kube-bench, Pod Security, NetworkPolicy | pendiente |
 
 ## Componente 3 — Implementación de ciberdefensa (4 pts) · Horacio
@@ -28,7 +28,7 @@ Cada criterio se mapea a un artefacto verificable. El estado se actualiza en cad
 |---|---|---|---|
 | Reporte pentest caja negra | `docs/04-ciberdefensa/pentest-caja-negra.md` | WPScan, ZAP HTML, `nmap -sV`, capturas Burp | pendiente |
 | Evaluación caja gris/blanca | `pentest-caja-gris.md` | PoC IDOR en pedidos, nonces/CSRF, capacidades | pendiente |
-| OWASP Web Top 10 | `owasp-web-top10.md` | Tabla A01–A10 con estado y evidencia | pendiente |
+| OWASP Web Top 10 | `owasp-web-top10.md` | Tabla A01-A10 con estado y evidencia | pendiente |
 | Evaluación de plugins y temas | `evaluacion-plugins.md` | Versión, CVE, decisión, código revisado | pendiente |
 | Casos de abuso | `casos-abuso.md` | Escenarios con pasos, impacto y detección | pendiente |
 | Perímetro del software | `superficie-ataque.md` | Endpoints, puertos, `wp-json`, `xmlrpc`, origen | pendiente |
@@ -41,7 +41,7 @@ Cada criterio se mapea a un artefacto verificable. El estado se actualiza en cad
 | WAF | `waf-cloudflare.md` | Reglas WP/WooCommerce + capturas de bloqueo | pendiente |
 | RASP / monitoreo en ejecución | `rasp-monitoreo.md` | Falco, integridad de archivos, reglas de API | pendiente |
 | SIEM | `siem.md` | Sinks, consultas, alertas probadas, dashboard | pendiente |
-| Cifrado | `arquitectura-seguridad.md` §5 + `waf-cloudflare.md` §4 | CMEK, TLS 1.3, secretos | pendiente |
+| Cifrado | `arquitectura-seguridad.md` sección 5 + `waf-cloudflare.md` sección 4 | CMEK, TLS 1.3, secretos | pendiente |
 | Tratamiento y heatmap | `heatmap.md` | Decisión aceptar/eliminar/evitar/mitigar/transferir | pendiente |
 
 ## Componente 5 — Informe técnico y APA (4 pts) · James
@@ -49,9 +49,9 @@ Cada criterio se mapea a un artefacto verificable. El estado se actualiza en cad
 | Criterio | Artefacto | Evidencia | Estado |
 |---|---|---|---|
 | Formato UMG (Arial 12, 1.5, sangrías) | `formato-apa.md` | Checklist + PDF verificado | pendiente |
-| Estructura formal (Opción B) | `informe-final.md` | Índice con secciones 1–6 y anexos | pendiente |
-| Referencias APA 7 | `informe-final.md` §6.6 | ≥15 fuentes citadas en el texto | pendiente |
-| Dictamen y conclusiones | `informe-final.md` §6.1–6.2 | Dictamen del grupo | pendiente |
+| Estructura formal (Opción B) | `informe-final.md` | Índice con secciones 1-6 y anexos | pendiente |
+| Referencias APA 7 | `informe-final.md` sección 6.6 | ≥15 fuentes citadas en el texto | pendiente |
+| Dictamen y conclusiones | `informe-final.md` secciones 6.1-6.2 | Dictamen del grupo | pendiente |
 
 ## Regla de aceptación
 

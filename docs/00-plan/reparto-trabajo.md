@@ -82,7 +82,7 @@ R = ejecuta · A = responde · C = consultado · I = informado
 - `clasificacion-cia.md` — A/M/B, criticidad calculada y justificación.
 - `stride.md` — STRIDE por componente y flujo; `dread.md` — scoring con desglose.
 - `matriz-riesgos.md` — 28 riesgos con ID `R-NN`, tipo, impacto, capa y tratamiento.
-- `docs/06-informe/` §1.4 y §6.6 — normativas y referencias APA.
+- `docs/06-informe/` sección 1.4 y sección 6.6 — normativas y referencias APA.
 
 **Evidencia**
 - Inventario exportado (CSV + MD), matriz v1 y v2, heatmap inicial; CSV de datos sintéticos en `evidencias/fase1/`.
@@ -132,7 +132,7 @@ R = ejecuta · A = responde · C = consultado · I = informado
 
 **Documenta**
 - `docs/04-ciberdefensa/pentest-caja-negra.md`, `pentest-caja-gris.md`, `owasp-web-top10.md`, `evaluacion-plugins.md`, `casos-abuso.md`, `superficie-ataque.md`.
-- Secciones 3.1–3.4, 4.3 y 4.4 del informe.
+- Secciones 3.1-3.4, 4.3 y 4.4 del informe.
 
 **Evidencia**
 - Reportes WPScan y ZAP, `nmap -sV`, capturas Burp redactadas, PoC de IDOR con dos cuentas, `docker history`/Trivy de la imagen, `curl` a `xmlrpc.php` (405/403), prueba de upload rechazado.
@@ -158,7 +158,7 @@ R = ejecuta · A = responde · C = consultado · I = informado
 **Documenta**
 - `docs/05-operaciones/waf-cloudflare.md`, `rasp-monitoreo.md`, `siem.md`, `tratamiento-riesgo.md`, `heatmap.md`.
 - Verificación de OWASP Web Top 10 en `docs/04-ciberdefensa/owasp-web-top10.md` (co-ejecución con Horacio).
-- Sección 4.2 y 5.1–5.6 del informe.
+- Sección 4.2 y 5.1-5.6 del informe.
 
 **Evidencia**
 - Reglas WAF con capturas de bloqueo, consultas BigQuery, alertas disparadas, dashboard exportado, matriz de tratamiento y heatmap residual.

@@ -114,7 +114,7 @@ Solo en `admin.aurorashop` y `staging.aurorashop` (el storefront queda público)
 
 Pasos: Zero Trust → Access → Applications → Self-hosted → añadir hostname → política Allow por lista de correos → login method One-time PIN o IdP del curso. El DNS debe estar proxied; Access no funciona en gris.
 
-Estado 2026-11-24: no hay aplicaciones de Access y el token no puede leer la organización Zero Trust (`10000 Authentication error`). Se crean en el dashboard o con un token de Access: Apps and Policies: Edit.
+Estado 2026-11-27: **`admin-aurorashop` tiene aplicación Access** (self-hosted, política Allow por correos del operador, sesión 8 h); sin sesión responde 302 a `alzentis.cloudflareaccess.com`. `staging` no tiene aplicación porque su registro DNS se eliminó (P-10). Evidencia: `evidencias/fase5/edge-hardening-2026-11-27.md`.
 
 El storefront no usa Access: protege login con Turnstile + reglas W-02/W-07 de `waf-cloudflare.md`. `admin.` sí exige Access aunque el atacante conozca credenciales de WordPress: sin identidad de Access no hay respuesta del origen.
 
@@ -204,27 +204,27 @@ Sin el paso del certificado, el Ingress queda en 526; sin DNS proxied, Cloud Arm
 
 ## 11. Checklist de cierre (#31)
 
-- [x] Tres registros A proxied creados y `dig` devuelve IPs de Cloudflare (34.8.197.115 demo, 136.68.90.143 staging).
-- [ ] Certificado Origin CA con SANs de los tres hosts instalado en `aurorashop` y `staging`.
-- [ ] SSL/TLS Full (strict), TLS 1.2 mínimo, HSTS configurado.
-- [ ] `curl` directo a la IP del LB devuelve 403; por Cloudflare devuelve 200/302.
-- [ ] Access activo en `admin.` y `staging.`; sin sesión devuelve login de Access.
-- [ ] WAF custom en log con capturas; checkout intacto.
-- [ ] Logpush escribiendo en GCS y eventos consultables.
-- [ ] Evidencias en `evidencias/fase5/waf-<fecha>/` con comando y fecha.
+- [x] Tres registros A proxied creados y `dig` devuelve IPs de Cloudflare (34.8.197.115 demo).
+- [x] Certificado Origin CA con SANs de los tres hosts instalado en `aurorashop` y `staging`.
+- [x] SSL/TLS Full (strict), TLS 1.2 mínimo y HSTS configurados (2026-11-27).
+- [x] `curl` directo a la IP del LB devuelve 403; por Cloudflare devuelve 200/302.
+- [x] Access activo en `admin.`; `staging.` sin registro DNS (P-10 cerrado).
+- [x] WAF custom en bloqueo con capturas (2026-11-25); checkout intacto.
+- [ ] Logpush escribiendo en GCS y eventos consultables (no incluido en plan Free).
+- [x] Evidencias en `evidencias/fase5/` con comando y fecha.
 
-## 12. Estado de aplicación al 2026-11-24
+## 12. Estado de aplicación al 2026-11-27
 
 | Control | Estado | Bloqueo |
 |---|---|---|
 | Infra Terraform | **Aplicada**: GKE, Cloud SQL, buckets, KMS, AR, secretos, Cloud Armor | — |
-| DNS de los 3 hosts | **3/3 proxied** con nombres de un nivel | App sin imagen (#40) |
+| DNS de los hosts | **2 proxied** (`aurorashop`, `admin-aurorashop`); `staging` eliminado | — |
 | Origin CA | **Emitido** (2041) e instalado | — |
-| WAF custom | 5 reglas staged, `enabled=false` | Falta smoke test con app real |
-| Managed Free Ruleset | Staged, `enabled=false` | Falta smoke test con app real |
-| Access | 0 aplicaciones | Token sin organización Zero Trust |
+| WAF custom | **5 reglas en block** | — |
+| Managed Free Ruleset | **Activo** | — |
+| Access | **1 aplicación** (`admin-`), política Allow | Agregar correos del equipo |
 | Logpush | Ownership validado; job no disponible (`1004`, plan Free) | Requiere plan con Logpush |
-| SSL/TLS/HSTS | Full/strict y HSTS pendientes de Zone Settings | Token sin Zone Settings: Edit |
+| SSL/TLS/HSTS | **TLS 1.2 mínimo y HSTS** activos | — |
 
 IPs: demo/admin `34.8.197.115`; staging `136.68.90.143`. Los nombres anidados `admin.aurorashop`/`staging.aurorashop` se retiraron: Cloudflare Free no cubre dos niveles con Universal SSL.
 

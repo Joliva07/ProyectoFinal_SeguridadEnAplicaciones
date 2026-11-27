@@ -45,8 +45,8 @@ Las 3 vulnerabilidades más recientes de WooCommerce, todas corregidas antes de 
 
 | CVE | Rango afectado | CVSS |
 |---|---|---|
-| CVE-2026-125801 | 11.0.0 – < 11.3.0 | 6.5 |
-| CVE-2026-106608 | 9.8.0 – < 11.2.0 | 7.2 |
+| CVE-2026-125801 | 11.0.0 - < 11.3.0 | 6.5 |
+| CVE-2026-106608 | 9.8.0 - < 11.2.0 | 7.2 |
 | CVE-2026-48888 | < 11.1.0 | 7.5 |
 
 ## 3. WPScan del pipeline (EV-48-04)

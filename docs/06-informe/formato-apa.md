@@ -13,14 +13,14 @@ Dueño: **James** · Verificación final antes de generar el PDF
 | Justificación | Texto justificado | excepto títulos |
 | Numeración | Esquina inferior derecha, desde la introducción | Insertar → Número de página |
 | Títulos | Jerarquía 1, 1.1, 1.1.1 | Estilos de Word, no negrita manual |
-| Tablas | Número y título arriba (`Tabla 1`), nota debajo | numeración corrida |
-| Figuras | Número y título arriba (`Figura 1`), nota debajo | fuente citada si es ajena |
-| Referencias | Sangría francesa, orden alfabético, APA 7 | ≥ 15 fuentes |
+| Tablas | `Tabla N` en negrita y título en cursiva arriba; nota 10 pt debajo | numeración corrida |
+| Figuras | `Figura N` en negrita y título en cursiva arriba; nota 10 pt debajo | fuente citada si es ajena |
+| Referencias | Sangría francesa 1.27 cm, alineación izquierda, orden alfabético, APA 7 | ≥ 15 fuentes |
 | Anexos | Rotulados A, B, C | referenciados en el texto |
 
 ## 2. Estructura
 
-Portada → Resumen ejecutivo → Índice → 1–6 → Anexos → Referencias. Sin página en blanco, sin "Tabla de contenido" manual (campo automático), sin cambiar el orden de secciones.
+Portada → Resumen ejecutivo → Índice → 1-6 → Anexos → Referencias. Sin página en blanco, sin "Tabla de contenido" manual (campo automático), sin cambiar el orden de secciones.
 
 ## 3. Citas
 
@@ -50,20 +50,42 @@ Toda tabla de herramienta (ZAP, Semgrep, Trivy) cita su documentación oficial e
 
 | # | Contenido | Autor |
 |---|---|---|
-| Tabla 1 | Perfil de seguridad de AuroraShop | Javier |
-| Tabla 2 | Inventario de activos (resumen) | Javier |
-| Tabla 3 | Matriz STRIDE | Javier |
-| Tabla 4 | Scoring DREAD | Javier |
-| Tabla 5 | Matriz de riesgos inicial | Javier |
-| Tabla 6 | Hallazgos caja negra (WPScan/ZAP) | Horacio |
-| Tabla 7 | Hallazgos caja gris y OWASP Web Top 10 | Horacio / Arun |
-| Tabla 8 | Plugins y temas: versión, CVE y decisión | Horacio |
-| Tabla 9 | Resultados SAST/SCA/IaC/contenedores | Josue |
-| Tabla 10 | Tratamiento y residual | Arun |
-| Figura 1 | Arquitectura de seguridad | Josue |
+| Tabla 1 | Perfil de seguridad de AuroraShop (stack, hosts) | James |
+| Tabla 2 | Alcance dentro y fuera | James |
+| Tabla 3 | Inventario de activos (resumen por criticidad) | Javier |
+| Tabla 4 | Amenazas STRIDE priorizadas | Javier |
+| Tabla 5 | Scoring DREAD (extracto) | Javier |
+| Tabla 6 | Matriz de riesgos inicial (resumen) | Javier |
+| Tabla 7 | Hallazgos de caja negra | Horacio |
+| Tabla 8 | OWASP Top 10:2021 verificado | Horacio / Arun |
+| Tabla 9 | Plugins y temas: versión, CVE y decisión | Horacio |
+| Tabla 10 | Resultados SAST/SCA y decisión | Josue / Arun |
+| Tabla 11 | Controles de plataforma y comprobación | Josue |
+| Tabla 12 | Reglas de borde activas | Arun / James |
+| Tabla 13 | Tratamiento y riesgo residual | Arun |
+| Figura 1 | Arquitectura de seguridad (C4) | Josue |
 | Figura 2 | Flujo de checkout con controles | Josue |
-| Figura 3 | Superficie de ataque | Horacio |
-| Figura 4 | Heatmap antes/después | Arun |
+| Figura 3 | Superficie de ataque por zonas | Horacio |
+| Figura 4 | Heatmap antes / residual / objetivo | Arun |
+
+Las figuras 1-4 están exportadas en `docs/06-informe/figuras/` (PNG) y embebidas en el informe; su fuente editable es Mermaid.
+
+## 5.1 APA 7 aplicado en la exportación
+
+La versión Word/PDF se genera desde `informe-final.md` y aplica estas convenciones de APA 7:
+
+| Elemento | Tratamiento |
+|---|---|
+| Portada | Título en negrita, centrado; autoría, afiliación, curso, docente y fecha centrados |
+| Nivel 1 | Centrado y en negrita (título del documento, resumen) |
+| Nivel 2 | Alineado a la izquierda y en negrita |
+| Nivel 3 | Alineado a la izquierda, negrita y cursiva |
+| Tablas | `Tabla N` en negrita; título en cursiva; encabezado de columna en negrita; nota 10 pt |
+| Figuras | `Figura N` en negrita; título en cursiva; nota 10 pt |
+| Referencias | Sangría francesa de 1.27 cm, alineación izquierda (no justificada), orden alfabético |
+| Citas | Autor-fecha en el cuerpo; cada entrada de la lista está citada al menos una vez |
+
+Se conservan por requisito de la cátedra: Arial 12, interlineado 1.5, márgenes de 2.54 cm, texto justificado y numeración inferior derecha. APA 7 pediría doble espacio y número en la esquina superior derecha; prevalece la norma UMG, documentada en la sección 1.
 
 ## 6. Checklist previo a la entrega
 

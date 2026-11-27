@@ -13,7 +13,7 @@ AuroraShop es una tienda en línea (WordPress + WooCommerce) desplegada en conte
 | Elemento | Decisión |
 |---|---|
 | CMS / E-commerce | WordPress 6.x + WooCommerce (PHP 8.3, imagen propia multi-stage) |
-| Cómputo | GKE Autopilot (namespace `aurorashop`), 2–6 pods de PHP-FPM + Nginx, HPA |
+| Cómputo | GKE Autopilot (namespace `aurorashop`), 2-6 pods de PHP-FPM + Nginx, HPA |
 | Base de datos | Cloud SQL MySQL 8 con IP privada, CMEK y usuario de aplicación |
 | Media / estáticos | Cloud Storage (bucket privado) + Cloudflare CDN |
 | Borde | Cloudflare (DNS, WAF, rate limiting, bot management, Access en admin, Logpush) |
