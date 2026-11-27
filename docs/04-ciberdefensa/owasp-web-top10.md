@@ -52,3 +52,22 @@ Se declara explícitamente que A02, A04, A08, A09 y A10 **no se resuelven con el
 - **Abierto:** ninguno.
 
 Ningún hallazgo requiere cambios de diseño de la aplicación: los cuatro parciales son **configuración** de Cloudflare, GCP y GitHub. Las categorías de lógica (A01 y A04) se resuelven con el diseño de WooCommerce y se comprobaron con pruebas de abuso reales.
+
+## 5. Verificación (Arun, #50)
+
+Verificado el 2026-11-26 contra las evidencias de #45–#48, el triaje SAST/SCA (`docs/03-devsecops/sast-sca.md` §3) y una revisión pasiva del borde (`evidencias/fase3/triaje-sast-sca-2026-11-26.md` §4).
+
+| Código | Estado de la matriz | Verificación | Ajuste |
+|---|---|---|---|
+| A01 | Mitigado | Coincide. H-09 (descargas sin sesión) corregido con regresión en #46 | — |
+| A02 | Parcial | **P-07 sigue abierto**: el borde acepta TLS 1.0 y 1.1 el 2026-11-26. `pentest-caja-negra.md` lo da por corregido y hay que rectificarlo. P-08 (sin HSTS) también sigue abierto | Se mantiene Parcial |
+| A03 | Mitigado | Coincide: Semgrep 0 hallazgos en el código PHP propio | — |
+| A04 | Mitigado | Coincide | — |
+| A05 | Parcial | Coincide (P-11, P-12). Se suman H-11 (CORS que refleja el origen con credenciales), aún reproducible, y S-06 (supresión `CKV2_GCP_18` que oculta P-11) | Se mantiene Parcial |
+| A06 | Mitigado | Coincide para las versiones instaladas, pero el gate de WPScan **no bloquea** (S-04): la API free no da CVSS. Un CVE nuevo no rompería el pipeline | **Pasa a Parcial** hasta corregir S-04 |
+| A07 | Mitigado | Coincide. H-10 (`SameSite`) aceptado; P-09 sigue sin Access | — |
+| A08 | Parcial | Coincide (P-13). Binary Authorization aceptado (S-07) | — |
+| A09 | Parcial | Coincide: AL-01..AL-08 sin probar (#54) | — |
+| A10 | Mitigado | Coincide | — |
+
+Resultado verificado: **5 mitigados** (A01, A03, A04, A07, A10), **5 parciales** (A02, A05, A06, A08, A09), **0 abiertos**.
