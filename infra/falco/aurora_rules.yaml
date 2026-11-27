@@ -1,0 +1,84 @@
+# Reglas Falco propias de AuroraShop (issue #41 plantillas, #55 despliegue y pruebas).
+# Se cargan además de las reglas por defecto de Falco (customRules del chart de Helm).
+# Ver docs/05-operaciones/rasp-monitoreo.md §2 para los IDs RT-NN.
+
+- list: aurora_namespaces
+  items: [aurorashop, dev, staging]
+
+# Procesos legítimos del pod: Nginx, PHP-FPM, el proxy de Cloud SQL, las sondas
+# (`php -r ...`) y el preStop de Nginx (`sleep 20`). El `sh` del entrypoint es PID 1.
+- list: aurora_allowed_procs
+  items: [nginx, php-fpm, php, cloud-sql-proxy, sleep]
+
+- macro: aurora_pod
+  condition: container and k8s.ns.name in (aurora_namespaces)
+
+# RT-01 · Shell o proceso inesperado en el pod
+- rule: Aurora - shell en pod
+  desc: Se lanzó una shell en un contenedor de AuroraShop que no es el entrypoint (kubectl exec, RCE o webshell).
+  condition: >
+    spawned_process and aurora_pod
+    and proc.name in (shell_binaries)
+    and not proc.vpid = 1
+  output: >
+    Shell en pod de AuroraShop (rt=RT-01 user=%user.name uid=%user.uid cmd=%proc.cmdline
+    parent=%proc.pname ns=%k8s.ns.name pod=%k8s.pod.name container=%container.name image=%container.image.repository)
+  priority: CRITICAL
+  tags: [aurorashop, RT-01, mitre_execution]
+
+- rule: Aurora - proceso inesperado
+  desc: Un binario fuera de la lista permitida se ejecutó en un contenedor de AuroraShop.
+  condition: >
+    spawned_process and aurora_pod
+    and not proc.name in (aurora_allowed_procs)
+    and not proc.name in (shell_binaries)
+  output: >
+    Proceso inesperado en AuroraShop (rt=RT-01 cmd=%proc.cmdline parent=%proc.pname
+    ns=%k8s.ns.name pod=%k8s.pod.name container=%container.name)
+  priority: WARNING
+  tags: [aurorashop, RT-01]
+
+# RT-02 · Escritura en el código del CMS. El root FS es de solo lectura, así que la
+# escritura debería fallar; la regla detecta también el intento (sin exigir fd válido).
+- rule: Aurora - escritura en codigo del CMS
+  desc: Se intentó abrir para escritura un archivo bajo /var/www/html fuera de uploads.
+  condition: >
+    evt.type in (open, openat, openat2) and evt.dir = < and evt.is_open_write = true
+    and aurora_pod
+    and fd.name startswith /var/www/html/
+    and not fd.name startswith /var/www/html/wp-content/uploads/
+  output: >
+    Escritura en el código del CMS (rt=RT-02 file=%fd.name res=%evt.res cmd=%proc.cmdline
+    pod=%k8s.pod.name container=%container.name)
+  priority: ERROR
+  tags: [aurorashop, RT-02, mitre_persistence]
+
+# RT-04 · Archivo ejecutable nuevo en uploads (webshell)
+- rule: Aurora - PHP en uploads
+  desc: Se creó un archivo con extensión ejecutable en el volumen de uploads.
+  condition: >
+    open_write and aurora_pod
+    and fd.name startswith /var/www/html/wp-content/uploads/
+    and (fd.name endswith .php or fd.name endswith .phtml or fd.name endswith .phar
+         or fd.name contains .php.)
+  output: >
+    Archivo ejecutable en uploads (rt=RT-04 file=%fd.name cmd=%proc.cmdline pod=%k8s.pod.name)
+  priority: CRITICAL
+  tags: [aurorashop, RT-04, mitre_persistence]
+
+# Q-08 · Salida de red fuera de lo que permite la NetworkPolicy: DNS, Cloud SQL (3307),
+# VIP restringida de APIs de Google, metadata server y loopback.
+- list: aurora_allowed_ports
+  items: [53, 3307]
+
+- rule: Aurora - salida de red no permitida
+  desc: Un contenedor de AuroraShop intentó conectarse a un destino fuera de la lista permitida (SSRF, C2 o exfiltración).
+  condition: >
+    outbound and aurora_pod
+    and not fd.sport in (aurora_allowed_ports)
+    and not fd.snet in ("127.0.0.0/8", "169.254.169.254/32", "199.36.153.4/30")
+  output: >
+    Salida de red no permitida (rt=Q-08 dest=%fd.sip:%fd.sport proto=%fd.l4proto cmd=%proc.cmdline
+    pod=%k8s.pod.name container=%container.name)
+  priority: ERROR
+  tags: [aurorashop, Q-08, mitre_exfiltration]

@@ -1,0 +1,28 @@
+{
+  "displayName": "AL-04 Shell en pod: kubectl exec/attach en aurorashop",
+  "severity": "CRITICAL",
+  "combiner": "OR",
+  "conditions": [
+    {
+      "displayName": "exec o attach en el namespace aurorashop",
+      "conditionMatchedLog": {
+        "filter": "logName=\"projects/aurorashop-sec-umg/logs/cloudaudit.googleapis.com%2Factivity\" protoPayload.methodName=(\"io.k8s.core.v1.pods.exec.create\" OR \"io.k8s.core.v1.pods.attach.create\") protoPayload.resourceName:\"namespaces/aurorashop/\"",
+        "labelExtractors": {
+          "principal": "EXTRACT(protoPayload.authenticationInfo.principalEmail)",
+          "recurso": "EXTRACT(protoPayload.resourceName)"
+        }
+      }
+    }
+  ],
+  "alertStrategy": {
+    "notificationRateLimit": { "period": "300s" },
+    "autoClose": "1800s"
+  },
+  "notificationChannels": [
+    "projects/aurorashop-sec-umg/notificationChannels/NOTIFICATION_CHANNEL_ID"
+  ],
+  "documentation": {
+    "mimeType": "text/markdown",
+    "content": "Alguien abrió una shell en un pod de producción (RT-10). Verificar si `${log.extracted_label.principal}` tenía un cambio aprobado; si no, aislar el pod y revisar con `infra/siem/queries/Q-09_exec_en_pod.sql`."
+  }
+}

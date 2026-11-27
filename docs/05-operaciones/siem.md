@@ -6,7 +6,7 @@ Dueño: **Arun** · Componente de rúbrica 4 · Stack gratuito: Cloud Logging + 
 
 ```mermaid
 flowchart LR
-    CF["Cloudflare<br/>HTTP logs"] -->|Logpush| GCS["GCS<br/>logs-archive"]
+    CF["Cloudflare<br/>HTTP logs"] -.->|"Logpush: no disponible en plan Free"| GCS["GCS<br/>logs-archive"]
     LB["Ingress / Cloud Armor"] --> LOG["Cloud Logging"]
     APP["Pods: Nginx + PHP<br/>logs estructurados"] --> LOG
     AUD["GKE audit + Cloud Audit"] --> LOG
@@ -24,7 +24,8 @@ flowchart LR
 
 | Fuente | Destino | Retención | Aporta |
 |---|---|---|---|
-| Cloudflare Logpush | GCS → BigQuery | 90 días | IP, país, regla WAF, acción, bot score |
+| Cloudflare Logpush | GCS → BigQuery | 90 días | IP, país, regla WAF, acción, bot score. **No disponible**: el plan Free devuelve `1004 logpush is not enabled` (`evidencias/fase5/waf-2026-11-24/estado-cloudflare.md`). Se compensa con los logs del balanceador y de Cloud Armor, más Cloudflare Analytics en el dashboard |
+| Balanceador + Cloud Armor | Cloud Logging | 30 días | peticiones rechazadas al origen (AL-07). **Hoy apagado**: falta `logging.enable` en la `BackendConfig` |
 | Nginx/PHP (pods) | Cloud Logging → sink | 30 días + 90 en BQ | ruta, usuario, status, latencia, `request_id` |
 | WooCommerce (auditoría) | Cloud Logging | 30 días | pedidos, cupones, exportaciones, autor |
 | Cloud Audit Logs (admin) | sink a BQ | 90 días | IAM, `exec`, cambios de recursos |
@@ -35,18 +36,27 @@ flowchart LR
 
 ## 3. Consultas de correlación
 
-1. **Fuerza bruta:** fallos por IP en `/wp-login.php` en 5 min > 20.
-2. **Exploit de plugin:** 404/403 concentrados en rutas de un plugin específico + payload en query.
-3. **IDOR:** 403 por `user_id` con `order_id` distinto en 10 min.
-4. **Card testing:** pedidos fallidos por IP > 10/hora con montos < 5.
-5. **Bypass de WAF:** peticiones al pod con `cf.waf.action = allow` y payload sospechoso.
-6. **Cambio de IAM/RBAC:** `SetIamPolicy` o `create rolebinding` fuera de ventana de despliegue.
-7. **Integridad:** hash de archivos del CMS ≠ baseline desplegado.
-8. **Egreso anómalo:** peticiones del pod a dominios no permitidos.
+SQL de BigQuery en `infra/siem/queries/` (#41), sobre las tablas que exporta el sink `aurorashop-demo-security-to-bigquery` al dataset `aurorashop_demo_security_logs`. Tablas, columnas y forma de ejecución: `infra/siem/README.md`.
 
-Cada consulta se guarda en `evidencias/fase5/siem/` con resultado y fecha.
+| ID | Consulta | Fuente real | Ajuste frente al diseño |
+|---|---|---|---|
+| Q-01 | **Fuerza bruta:** fallos por IP en `/wp-login.php` en 5 min > 20 | `stdout` (Nginx) | Fallo = `POST` con 200; éxito = 302 |
+| Q-02 | **Exploit de plugin:** 403/404 concentrados en rutas de un plugin | `stdout` (Nginx) | Sin el payload: Nginx registra `$uri`, sin query string |
+| Q-03 | **IDOR:** rechazos a rutas de pedidos en 10 min | `stdout` (Nginx) | Por IP, porque el log no trae usuario. La variante por usuario necesita el evento `order_access_denied` (#55) |
+| Q-04 | **Card testing:** checkouts fallidos por IP > 10/hora | `stdout` (Nginx) | Sin monto. La variante `< 5` necesita el evento `checkout_failed` (#55) |
+| Q-05 | **Bypass de WAF:** firma de ataque en la ruta y respuesta < 400 | `stdout` (Nginx) | Sin `cf.waf.action`, porque no hay Logpush |
+| Q-06 | **Cambio de IAM/RBAC** fuera del CI | `cloudaudit_googleapis_com_activity` | Se excluye `sa-gh-deployer` en vez de una ventana horaria |
+| Q-07 | **Integridad:** hash del CMS distinto del baseline | `stderr` (`aurora_event`) | Depende del chequeo de #55 |
+| Q-08 | **Egreso anómalo** desde el pod | Falco | Depende de Falco y de añadir el namespace `falco` al sink |
+| Q-09 | `kubectl exec`/`attach` en `aurorashop` | `cloudaudit_googleapis_com_activity` | Nueva: cubre RT-01/RT-10 aunque Falco no se admita en Autopilot |
+| Q-10 | Petición servida con un `Host` ajeno | `stdout` (Nginx) | Nueva: soporte de AL-07 |
+| Q-11 | Tasa de 5xx | `stdout` (Nginx) | Nueva: soporte de AL-08 |
+
+Las consultas pasan el parser del dialecto BigQuery (`sqlglot`), pero **no se han ejecutado** porque Arun no tiene `roles/bigquery.jobUser`. Al ejecutarlas por primera vez (#54) hay que confirmar los nombres de tablas y columnas con `bq show --schema`. Cada resultado se guarda en `evidencias/fase5/siem/` con fecha.
 
 ## 4. Alertas
+
+Las alertas son de Cloud Monitoring sobre Cloud Logging, no sobre BigQuery, para no sumar la latencia del sink. Los filtros y las plantillas JSON de AL-02, AL-04 y AL-07 están en `infra/siem/alerts/`.
 
 | ID | Nombre | Condición | Severidad | Destino |
 |---|---|---|---|---|

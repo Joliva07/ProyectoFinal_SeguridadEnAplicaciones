@@ -23,6 +23,8 @@ infra/terraform.tfvars
 cms/**/vendor/
 wp-config.php
 *.sql
+# Consultas del SIEM: no son volcados de base de datos
+!infra/siem/queries/*.sql
 debug.log
 
 # Docker / K8s
@@ -48,3 +50,6 @@ npm-audit.json
 
 # Planes locales de Terraform
 infra/tfplan*
+
+# Volcados de fallos del shell de Windows
+*.stackdump

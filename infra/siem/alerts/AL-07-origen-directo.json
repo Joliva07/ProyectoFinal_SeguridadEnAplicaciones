@@ -1,0 +1,28 @@
+{
+  "displayName": "AL-07 Origen accedido sin Cloudflare (Cloud Armor DENY)",
+  "severity": "CRITICAL",
+  "combiner": "OR",
+  "conditions": [
+    {
+      "displayName": "Cloud Armor rechaza una petición al balanceador",
+      "conditionMatchedLog": {
+        "filter": "resource.type=\"http_load_balancer\" jsonPayload.enforcedSecurityPolicy.name=\"aurorashop-demo-edge\" jsonPayload.enforcedSecurityPolicy.outcome=\"DENY\"",
+        "labelExtractors": {
+          "ip": "EXTRACT(httpRequest.remoteIp)",
+          "url": "EXTRACT(httpRequest.requestUrl)"
+        }
+      }
+    }
+  ],
+  "alertStrategy": {
+    "notificationRateLimit": { "period": "300s" },
+    "autoClose": "1800s"
+  },
+  "notificationChannels": [
+    "projects/aurorashop-sec-umg/notificationChannels/NOTIFICATION_CHANNEL_ID"
+  ],
+  "documentation": {
+    "mimeType": "text/markdown",
+    "content": "Una petición llegó al balanceador sin pasar por Cloudflare y Cloud Armor la rechazó (R-17). La IP del LB está siendo sondeada. Requiere los logs del balanceador activos en la BackendConfig."
+  }
+}
