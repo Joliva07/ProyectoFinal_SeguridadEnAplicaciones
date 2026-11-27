@@ -25,7 +25,7 @@ Detección en ejecución dentro del pod y del CMS, no solo en el borde: procesos
 
 ## 3. Implementación
 
-- **Falco** como DaemonSet (o integración con GKE) con ruleset propio; salida a Cloud Logging y Pub/Sub.
+- **Falco** como DaemonSet (o integración con GKE) con ruleset propio; salida a Cloud Logging y Pub/Sub. Reglas base de RT-01, RT-02, RT-04 y del egreso (Q-08) en `infra/falco/aurora_rules.yaml` (#41). Instalación, pruebas y la verificación de que Autopilot lo admite en `infra/falco/README.md`.
 - **Integridad:** `wp core verify-checksums` + hash SHA-256 de plugins/tema contra baseline en CI; ejecución programada cada 6 h y comparación con el commit desplegado.
 - **Logs estructurados** del plugin propio: `request_id`, `user_id`, `route`, `status`, `item_id`, sin PII.
 - **Métricas** de Cloud Run/GKE + Cloud Armor + Cloudflare Analytics para RT-05..RT-08.

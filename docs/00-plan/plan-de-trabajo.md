@@ -82,6 +82,8 @@ Ojo: el **primer `terraform apply` del bootstrap** lo ejecutas tú (eres el úni
 | 7 | Tratamiento del riesgo + heatmap residual | #56 | #50, #54 | `tratamiento-riesgo.md`, `heatmap.md` | 0 críticos sin control |
 | 8 | Informe §4.2, 5.1–5.6 | — | #52–#56 | Markdown de secciones | Tablas y cifras finales |
 
+Bloqueos y dependencias externas de estas tareas: [`bloqueos-arun.md`](bloqueos-arun.md).
+
 ## 7. James — Cloudflare, operación e informe
 
 | # | Tarea | Issue | Depende de | Entregable | Listo cuando |
