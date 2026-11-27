@@ -46,7 +46,7 @@ Riesgo residual: cero críticos y cero altos; 12 medios y 16 bajos. De 12 hallaz
 
 ## Índice general
 
-Índice generado a partir de los títulos del documento y de las páginas del PDF de `docs/06-informe/salida/`; si se edita el contenido, se regenera con el mismo procedimiento.
+Índice generado a partir de los títulos del documento y de las páginas del PDF de salida; si se edita el contenido, se regenera con el mismo procedimiento.
 
 ---
 
@@ -54,9 +54,7 @@ Riesgo residual: cero críticos y cero altos; 12 medios y 16 bajos. De 12 hallaz
 
 ### 1.1 Contexto del CMS / E-Commerce
 
-*Autor: Horacio. Fuentes: `README.md`, `docs/00-plan/alcance.md` sección 2*
-
-AuroraShop se evaluó como CMS/e-commerce empresarial, no como un sitio institucional. Esa decisión de alcance define qué se prueba: la superficie de plugins, el checkout, la API REST de WooCommerce, el rol del borde y la cadena de suministro del CMS. La tienda usa datos sintéticos (60 productos, 40 clientes, 150 pedidos y 30 cupones) y una pasarela en modo sandbox, de modo que ningún hallazgo expone datos de personas reales (`docs/00-plan/alcance.md` sección 6).
+AuroraShop se evaluó como CMS/e-commerce empresarial, no como un sitio institucional. Esa decisión de alcance define qué se prueba: la superficie de plugins, el checkout, la API REST de WooCommerce, el rol del borde y la cadena de suministro del CMS. La tienda usa datos sintéticos (60 productos, 40 clientes, 150 pedidos y 30 cupones) y una pasarela en modo sandbox, de modo que ningún hallazgo expone datos de personas reales.
 
 El perfil técnico resumido se presenta en la Tabla 1. La elección de WordPress + WooCommerce fue deliberada: concentra los riesgos que la cátedra exige demostrar (A01 control de acceso, A03 inyección, A04 diseño inseguro, A06 componentes vulnerables) y obliga a resolverlos en tres planos distintos: aplicación, contenedor y borde.
 
@@ -73,11 +71,9 @@ El perfil técnico resumido se presenta en la Tabla 1. La elección de WordPress
 | CI/CD | GitHub Actions con OIDC/WIF | Sin claves JSON; deploy por digest |
 | Hosts | `aurorashop`, `admin-aurorashop`, `staging-aurorashop` bajo `ancordss.me.uk` | Tres entradas, tres políticas de acceso |
 
-*Nota.* Elaborada a partir de `README.md` y `docs/00-plan/alcance.md` sección 3-5. Los tres hosts apuntan a dos IP globales distintas: demo/admin a `34.8.197.115` y staging a `136.68.90.143` (`docs/05-operaciones/integracion-cloudflare-gke.md` sección 2).
+*Nota.* Los tres hosts apuntan a dos IP globales distintas: demo y admin a `34.8.197.115`, y staging a `136.68.90.143`.
 
 ### 1.2 Objetivos del proyecto
-
-*Autor: James. Fuente: `docs/00-plan/alcance.md` sección 1*
 
 Objetivo general: evaluar, rediseñar e implementar seguridad continua sobre AuroraShop, con evidencia reproducible y un dictamen técnico verificable.
 
@@ -95,8 +91,6 @@ El criterio de éxito no fue "tener controles escritos" sino "tener controles pr
 
 ### 1.3 Alcance
 
-*Autor: James. Fuente: `docs/00-plan/alcance.md` secciones 3-5*
-
 La Tabla 2 delimita el alcance acordado; todo lo que no figura en la columna izquierda se declara como exclusión y no se usa como evidencia.
 
 **Tabla 2.** Dentro y fuera del alcance
@@ -112,15 +106,11 @@ La Tabla 2 delimita el alcance acordado; todo lo que no figura en la columna izq
 | SIEM gratuito (Cloud Logging + BigQuery), Falco | Chronicle, Splunk o UEBA histórico |
 | Ambientes `dev`, `demo`, `staging`, `break-glass` | Producción multi-región con DR contractual |
 
-*Nota.* Elaborada a partir de `docs/00-plan/alcance.md` secciones 3-5.
-
 Los ambientes tienen propósitos distintos y eso condiciona la evidencia: `demo` es público y se usa para pentest; `staging` debía ser la réplica para pruebas destructivas, pero respondía 502 por un registro DNS huérfano y el 27 de noviembre se eliminó ese registro (P-10 cerrado). `dev` existe en el clúster pero sus pods llevan dos días en `Init:0/1`; no se usó como fuente de evidencia. El ambiente `break-glass` es un procedimiento operado solo por James, no un despliegue permanente.
 
-Una restricción material del alcance es el plan Cloudflare Free: cinco reglas custom, sin acción `log`, sin regex y una sola regla de rate limiting con mitigación máxima de 10 segundos. Todo control que exceda esa cuota se declara como limitación y se compensa en Cloud Armor, Nginx o la aplicación (`docs/05-operaciones/waf-cloudflare.md` sección 2).
+Una restricción material del alcance es el plan Cloudflare Free: cinco reglas custom, sin acción `log`, sin regex y una sola regla de rate limiting con mitigación máxima de 10 segundos. Todo control que exceda esa cuota se declara como limitación y se compensa en Cloud Armor, Nginx o la aplicación.
 
 ### 1.4 Normativas y estándares de referencia
-
-*Autor: Javier. Fuente: `docs/00-plan/alcance.md` sección 7*
 
 El proyecto se apoya en ISO/IEC 27001:2022 para el sistema de gestión y ISO/IEC 27005:2022 para el proceso de riesgo (International Organization for Standardization [ISO/IEC], 2022a, 2022b). La evaluación técnica usa OWASP Top 10:2021, OWASP ASVS 5.0 como meta de verificación (OWASP Foundation, 2025), el Web Security Testing Guide (OWASP Foundation, 2021b) y las Cheat Sheets para las remediaciones concretas (OWASP Foundation, 2024).
 
@@ -128,17 +118,15 @@ En infraestructura se aplican el CIS Kubernetes Benchmark (Center for Internet S
 
 ### 1.5 Definición del scope técnico
 
-*Autor: Josue. Fuente: `docs/02-arquitectura/arquitectura-seguridad.md` secciones 1-3*
-
 El scope técnico se fijó en cinco principios verificables: Zero Trust, borde primero, inmutabilidad del contenedor, cifrado por defecto y menor privilegio comprobable, alineados con la guía de fundamentos de seguridad de Google Cloud (Google Cloud, 2024c). La arquitectura resultante tiene tres planos de control separados (zona Cloudflare, proyecto GCP y clúster) y una regla dura: ningún tráfico llega a un pod sin pasar por el balanceador y su política de Cloud Armor.
 
-La Figura 1 resume el flujo; su fuente editable es `docs/02-arquitectura/diagramas/c4-contenedores.mmd`.
+La Figura 1 resume el flujo de la petición entre el borde y el pod.
 
 **Figura 1.** Arquitectura de contenedores de AuroraShop
 
 ![Arquitectura de contenedores de AuroraShop](figuras/figura-1-arquitectura.png){width=15.5cm}
 
-*Nota.* Exportada desde `docs/02-arquitectura/diagramas/c4-contenedores.mmd`; el diagrama de contexto C4 está en `c4-contexto.mmd`.
+*Nota.* El diagrama de contexto C4 se omite para no duplicar el recorrido de la petición.
 
 El flujo de checkout agrega dos controles que no son evidentes en el diagrama de contenedores: recálculo de precios en servidor y autorización por objeto del pedido. La Figura 2 documenta ese recorrido.
 
@@ -146,15 +134,11 @@ El flujo de checkout agrega dos controles que no son evidentes en el diagrama de
 
 ![Flujo de checkout con controles](figuras/figura-2-checkout.png){width=15.5cm}
 
-*Nota.* Exportada desde `docs/02-arquitectura/diagramas/flujo-checkout.mmd`.
-
 ---
 
 ## 2. Activos y riesgos
 
 ### 2.1 Inventario de activos (ISO 27001)
-
-*Autor: Javier. Fuente: `docs/01-activos-riesgos/inventario-activos.md`*
 
 El inventario registra 26 activos con proceso, tipo, ubicación, valoración CIA, criticidad calculada, justificación, propietario, custodio y usuarios con acceso. La Tabla 3 resume la distribución; el detalle completo está en la tabla del documento fuente.
 
@@ -166,19 +150,13 @@ El inventario registra 26 activos con proceso, tipo, ubicación, valoración CIA
 | Alta (9) | A-06 a A-11, A-18, A-23, A-25 | Plugins, tema, imagen, media, manifiestos, Terraform, logs, repo, laptops |
 | Media (2) | A-24, A-26 | Documentación de seguridad, cuentas demo |
 
-*Nota.* Elaborada a partir de `docs/01-activos-riesgos/inventario-activos.md` e `clasificacion-cia.md` sección 3.
-
 Dos decisiones de método importan para leer el resto del informe. Primera: el inventario es de diseño en la semana 1 y se contrasta contra el clúster real en la semana 2; toda diferencia se registra como hallazgo y no se corrige en silencio. Segunda: los activos críticos justifican el diseño. Si un control no protege al menos un activo crítico, debe justificarse por qué está en el alcance.
 
 ### 2.2 Clasificación CIA y criticidad
 
-*Autor: Javier. Fuente: `docs/01-activos-riesgos/clasificacion-cia.md`*
-
 La clasificación usa A/M/B por dimensión, calcula `max(C,I,A)` y suma un punto cuando el activo está expuesto a Internet o no tiene repuesto, con tope en 3. El resultado son 14 activos críticos, 10 altos y 2 medios. El ajuste por exposición explica por qué DNS/TLS (A-16) y la configuración de Cloudflare (A-17) son críticos aunque su valoración individual sea mixta: un error ahí afecta a todos los hosts a la vez.
 
 ### 2.3 Modelado de amenazas (STRIDE)
-
-*Autor: Javier. Fuente: `docs/01-activos-riesgos/stride.md`*
 
 El modelado descompone el sistema en 14 componentes y flujos y aplica las seis categorías STRIDE (Shostack, 2014). Se identificaron 56 amenazas con ID estable `T-NN`, cada una ligada a un componente, un actor y (cuando se probó) un hallazgo `H-NN`.
 
@@ -197,11 +175,7 @@ La Tabla 4 resume las ocho amenazas priorizadas por componente y actor.
 | T-01 | Fuerza bruta en `wp-login` | Login | Externo | R-06 |
 | T-22 | Card testing en checkout | Checkout | Externo | R-16 |
 
-*Nota.* Elaborada a partir de `docs/01-activos-riesgos/stride.md` secciones 2-3.
-
 ### 2.4 Clasificación de riesgos (DREAD)
-
-*Autor: Javier. Fuente: `docs/01-activos-riesgos/dread.md`*
 
 DREAD se usó como priorización de negocio, no como sustituto de CVSS. Se puntuaron 24 amenazas con la fórmula `(D+R+E+A+D)/5`; cuando existe CVE o PoC se registra CVSS 4.0 y se conserva DREAD para ordenar el trabajo.
 
@@ -219,11 +193,9 @@ La Tabla 5 presenta el extracto de mayor puntuación.
 | T-46 | DDoS volumétrico | 7.8 | Alta |
 | T-11 / T-22 / T-44 / T-23 | Upload PHP, card testing, bypass de origen, scraping | 7.6 | Alta |
 
-*Nota.* Elaborada a partir de `docs/01-activos-riesgos/dread.md` sección 2. La tabla completa tiene 24 filas.
+*Nota.* La tabla completa tiene 24 filas.
 
 ### 2.5 Matriz de riesgos inicial
-
-*Autor: Javier. Fuente: `docs/01-activos-riesgos/matriz-riesgos.md`*
 
 La matriz cruza 28 riesgos con las siete capas de seguridad en profundidad y asigna probabilidad, impacto, nivel, impacto de negocio y tratamiento. El estado inicial es 11 críticos, 13 altos y 4 medios.
 
@@ -237,15 +209,13 @@ La Tabla 6 resume el estado inicial por nivel.
 | Alto (10-14) | 13 | R-03 XSS, R-04 CSRF, R-12 K8s sin red, R-17 origen directo, R-20 admin sin MFA |
 | Medio (5-9) | 4 | R-18 TLS débil, R-27 datos reales en capturas, R-28 un operador de Cloudflare, R-25 proveedor |
 
-*Nota.* Elaborada a partir de `docs/01-activos-riesgos/matriz-riesgos.md` sección 2. La cobertura por capa está verificada en la sección 3 del mismo documento: las diez capas tienen al menos un riesgo y un control.
+*Nota.* La cobertura por capa está verificada: las diez capas tienen al menos un riesgo y un control.
 
 ---
 
 ## 3. Evaluación de seguridad
 
 ### 3.1 Pentesting caja negra
-
-*Autor: Horacio. Verificación: Arun. Fuente: `docs/04-ciberdefensa/pentest-caja-negra.md`*
 
 Se ejecutaron 20 pruebas desde Internet sin credenciales el 26 de noviembre, dentro de la ventana aprobada, con máximo 5 req/s. El resultado fueron 16 controles confirmados, dos hallazgos nuevos de severidad baja y la reconfirmación de tres hallazgos de perímetro ya registrados.
 
@@ -261,15 +231,11 @@ La Tabla 7 lista los hallazgos vigentes al corte.
 | P-10 | `staging` responde 502 por DNS huérfano | Borde | Baja | Cerrado (2026-11-27) |
 | P-12 | `wp-cron.php` público | Aplicación | Baja | Aceptado temporal |
 
-*Nota.* Elaborada a partir de `docs/04-ciberdefensa/pentest-caja-negra.md` sección 4 y `superficie-ataque.md` sección 4.
-
 El pentest confirmó controles que conviene registrar porque son los que sostienen el dictamen: el origen no es descubrible por `nmap` (solo se ve la malla de Cloudflare), SSH/MySQL/RDP están filtrados, `readme.html` y los archivos sensibles dan 403, `?author=1` da 404, la versión de núcleo y WooCommerce está oculta, el registro público está deshabilitado y no hubo XSS reflejado, SQLi basada en error ni trazas de aplicación.
 
 Hay una corrección metodológica relevante: el documento de caja negra declaró P-07 (TLS 1.0) como corregido, pero la verificación independiente de Arun del mismo día demostró que los handshakes TLS 1.0 y 1.1 se completaban. El control se aplicó de verdad el 27 de noviembre (*Minimum TLS Version* 1.2) y se verificó con `curl --tlsv1.0/--tlsv1.1`, que ahora fallan. La secuencia (declarado, reabierto, corregido y probado) es el ejemplo que justifica la doble verificación de todo control.
 
 ### 3.2 Pentesting caja gris / blanca
-
-*Autor: Horacio. Verificación: Arun. Fuente: `docs/04-ciberdefensa/pentest-caja-gris.md`*
 
 Se ejecutaron 18 pruebas con sesiones reales de cuatro roles (`customer`, `editor`, `shop_manager` con TOTP y administrador), catorce de ellas en el entorno local con la misma imagen que producción para no contaminar la base de la demo. En caja blanca se revisó todo el código propio: un mu-plugin de hardening, uno de 2FA, el tema hijo y los scripts de arranque.
 
@@ -278,8 +244,6 @@ Resultados: 14 controles confirmados, 3 no aplican (no hay pasarela con webhook 
 La matriz de capacidades es uno de los controles más fuertes del sistema: nadie, ni el administrador, tiene `unfiltered_html`, `install_plugins`, `edit_plugins` ni `edit_themes`. El `shop_manager` no puede cambiar roles y el `editor` no puede instalar plugins. La autorización por objeto que se verificó la implementa WooCommerce para pedidos y clientes; el equipo no añadió una capa propia.
 
 ### 3.3 Evaluación OWASP Web Top 10
-
-*Autores: Horacio (pruebas) y Arun (verificación). Fuente: `docs/04-ciberdefensa/owasp-web-top10.md`*
 
 La Tabla 8 resume el estado verificado de las diez categorías.
 
@@ -298,13 +262,11 @@ La Tabla 8 resume el estado verificado de las diez categorías.
 | A09 | Logging/Monitoring Failures | Parcial | AL-01..AL-08 sin prueba de disparo |
 | A10 | SSRF | Mitigado | ,  |
 
-*Nota.* Estado posterior a la verificación de Arun del 2026-11-26 y a los cierres del 2026-11-27 (`owasp-web-top10.md` secciones 4-5): 6 mitigados, 4 parciales, 0 abiertos.
+*Nota.* Estado posterior a la verificación independiente del 2026-11-26 y a los cierres del 2026-11-27: 6 mitigados, 4 parciales, 0 abiertos.
 
 La verificación de Arun cambió dos filas respecto de la evaluación original: A06 pasó de mitigado a parcial porque el gate de WPScan no bloquea cuando la API no devuelve CVSS, y A02 se mantuvo parcial mientras P-07 y P-08 siguieran abiertos. A02 pasó a mitigado el 27 de noviembre al fijar TLS 1.2 mínimo y HSTS. Ese ajuste es el ejemplo más claro de la regla del proyecto: un control no se declara mitigado por estar configurado, sino por haber sido probado.
 
 ### 3.4 Evaluación de plugins y temas
-
-*Autor: Horacio. Fuente: `docs/04-ciberdefensa/evaluacion-plugins.md`*
 
 La Tabla 9 reúne el inventario, la versión y la decisión.
 
@@ -319,21 +281,15 @@ La Tabla 9 reúne el inventario, la versión y la decisión.
 | Tema hijo `aurora-child` | 1.0.0 | ,  | 0 (Semgrep limpio) | Mantener |
 | Akismet, Hello Dolly, temas inactivos | ( | ) | ,  | Eliminados de la imagen |
 
-*Nota.* Elaborada a partir de `docs/04-ciberdefensa/evaluacion-plugins.md` sección 2 y `docs/03-devsecops/plugins-temas.md` sección 1.
-
 La política es restrictiva a propósito: si un componente no tiene uso demostrable, se elimina. Por eso la imagen no lleva plugins de pagos, envíos, antispam, SEO, caché ni respaldo; el checkout usa los métodos nativos de WooCommerce y el antispam se resuelve en Cloudflare. Cada zip entra con versión fija y SHA-256, y el panel no puede instalar nada porque la modificación de archivos está bloqueada.
 
 ### 3.5 SAST (código del CMS y plugins)
-
-*Autor: Josue. Triaje: Arun. Fuente: `docs/03-devsecops/sast-sca.md` sección 1*
 
 El pipeline ejecuta Semgrep con los rulesets `p/php`, `p/owasp-top-ten` y `p/secrets`. En el run `45940623596` sobre el commit `2f98a53`, Semgrep produjo tres resultados, todos suprimidos en el código con motivo en línea. La revisión manual cubrió SQL, XSS, CSRF, uploads, secretos y deserialización; el código propio no ejecuta SQL directo, no registra rutas REST y no usa `unserialize` ni `eval`.
 
 Dos observaciones de proceso quedaron registradas: S-01 (`request-host-used` en Nginx) es falso positivo porque `$host` solo va al log con `escape=json`, y S-03 (Cloud SQL `ENCRYPTED_ONLY`) está aceptado pero su `nosemgrep` no tenía motivo en línea, lo que incumple la regla del propio proyecto.
 
 ### 3.6 SCA (dependencias y plugins)
-
-*Autor: Josue. Triaje: Arun. Fuente: `docs/03-devsecops/sast-sca.md` sección 2*
 
 Composer audit sobre `cms/composer.lock` devolvió cero avisos con cero paquetes declarados: el contrato PHP está fijado, pero las 20 dependencias que viajan dentro de WooCommerce se inventarían con Trivy. Trivy sobre las imágenes PHP y Nginx (Alpine 3.24.4) devolvió cero vulnerabilidades, cero secretos y cero misconfiguraciones. WPScan, contra el storefront con la API gratuita, devolvió 57 entradas históricas de WooCommerce sin campo CVSS.
 
@@ -350,13 +306,9 @@ La Tabla 10 resume los resultados por herramienta y la decisión del triaje.
 | WPScan (API free) | Storefront | 57 entradas históricas, 0 con CVSS | Falso positivo de versión |
 | Gate WPScan | `.github/scripts/wpscan-threshold.py` | No compara nada | **S-04 abierto** |
 
-*Nota.* Elaborada a partir de `evidencias/fase3/triaje-sast-sca-2026-11-26.md` sección 1 y `docs/03-devsecops/sast-sca.md` sección 3.
-
 S-04 es el hallazgo de proceso más importante de esta fase: la API gratuita de WPScan no devuelve el campo `cvss`, el script busca ese campo, no lo encuentra y termina en verde. Un CVE crítico sin corregir tampoco rompería el pipeline. El triaje propone comparar `fixed_in` contra la versión fijada en el `Dockerfile` y fallar cuando la corrección sea posterior a la instalada.
 
 ### 3.7 Evaluación de contenedores y Kubernetes
-
-*Autor: Josue. Fuente: `docs/04-ciberdefensa/evaluacion-contenedores.md`*
 
 La matriz tiene diez pruebas reproducibles. Al 26 de noviembre estaban verificadas en GKE las de Pod Security (rechazo de `privileged` y `hostPath`), RBAC de CI (solo recursos de aplicación, sin Secrets ni Roles) y API privada con Connect Gateway. En kind/Calico se validaron el aislamiento de red y la configuración de HPA/PDB. Las pruebas que dependen de inspeccionar la imagen (UID, root FS de solo lectura, secretos en capas, Trivy de imagen) figuran como pendientes en ese documento aunque el escaneo de imágenes del pipeline sí se ejecutó en el run citado.
 
@@ -368,8 +320,6 @@ Autopilot limita lo que el equipo puede afirmar: Google administra nodos, kernel
 
 ### 4.1 Rediseño arquitectónico cloud seguro
 
-*Autor: Josue. Fuente: `docs/02-arquitectura/arquitectura-seguridad.md` secciones 3-7*
-
 El rediseño separa identidad, red y datos. La identidad usa Workload Identity con una cuenta de servicio por ambiente y permisos acotados a su namespace, su base, su bucket y sus secretos. La red usa NetworkPolicy default-deny con allowlist explícita a DNS, Cloud SQL en el puerto 3307, APIs restringidas y el metadata server. Los datos usan CMEK en Cloud SQL, buckets, logs y secretos, con rotación de 90 días.
 
 Las decisiones que más reducen riesgo son tres. Primera: Cloud SQL sin IP pública y con IAM DB Authentication, de modo que no existe contraseña de aplicación persistente. Segunda: secretos montados por CSI de Secret Manager, nunca en variables de entorno ni en Terraform. Tercera: Connect Gateway en lugar de un endpoint público del API de Kubernetes, lo que permite que el CI despliegue sin exponer el plano de control.
@@ -378,13 +328,9 @@ El diseño también declara lo que no hace: no hay API Gateway dedicado porque W
 
 ### 4.2 Controles de seguridad propuestos
 
-*Autor: Arun. Fuente: `docs/05-operaciones/tratamiento-riesgo.md` sección 2*
-
 El tratamiento se organizó por hallazgo y no por herramienta, con una regla de decisión explícita: mitigar, evitar, transferir, aceptar o eliminar, y residual aceptable de 9 o menos. Cada fila tiene control, responsable, plazo, estado y residual. Los controles aplicados se agrupan en cuatro familias: borde (WAF, rate limit, Access, Cloud Armor), aplicación (nonces, autorización por objeto, recálculo de precios, `wp_kses`, uploads sin ejecución), plataforma (PSA, NetworkPolicy, CSI, CMEK, Workload Identity) y proceso (pipeline, branch protection, triaje).
 
 ### 4.3 Hardening del CMS
-
-*Autor: Horacio. Fuente: `docs/03-devsecops/plugins-temas.md` sección 3*
 
 El endurecimiento del CMS vive en un mu-plugin, no en el panel. Esa elección es deliberada: al cargarse siempre y no poder desactivarse desde la interfaz, sobrevive a un administrador distraído o a una cuenta comprometida. El plugin impone el límite de intentos por usuario e IP, exige segundo factor al personal, restringe la lista de usuarios a quien publica contenido, filtra los tipos de archivo aceptados y obliga a iniciar sesión para descargar un producto. Fuera de él quedan los interruptores de WordPress: edición de archivos e instalación de plugins deshabilitadas, depuración apagada y roles innecesarios eliminados.
 
@@ -392,15 +338,11 @@ Complementariamente, `DISALLOW_FILE_EDIT` y `DISALLOW_FILE_MODS` deshabilitan el
 
 ### 4.4 Hardening de plugins y temas
 
-*Autor: Horacio. Fuente: `docs/03-devsecops/plugins-temas.md` secciones 2-4*
-
 La admisión de un componente sigue una prueba, no una preferencia: se revisa que el proyecto siga recibiendo mantenimiento, que no arrastre vulnerabilidades graves sin corrección, que su código no ejecute entradas del usuario y que sus consultas usen el preparador de WordPress. También se exige que no pida permisos de administrador para funcionar y que escape la salida. El tema hijo pasa el filtro casi por omisión: apenas tiene un archivo PHP con una URL escapada, no define funciones ni carga recursos externos, así que su superficie es mínima.
 
 La cadena de suministro se cierra en la imagen: versiones fijas, SHA-256 por zip, código propiedad de root y de solo lectura en el pod, y actualizaciones solo por PR con WPScan y Trivy.
 
 ### 4.5 Hardening de contenedores
-
-*Autor: Josue. Fuente: `docs/03-devsecops/contenedores-k8s.md` secciones 1-2*
 
 La Tabla 11 relaciona cada control de plataforma con su comprobación, conforme a la guía de hardening de GKE (Google Cloud, 2024b).
 
@@ -417,19 +359,13 @@ La Tabla 11 relaciona cada control de plataforma con su comprobación, conforme 
 | Recursos | Requests/limits, HPA 2-6, PDB `minAvailable: 1` | `kubectl get hpa,pdb` |
 | CI RBAC | Role por namespace, sin Secrets ni RBAC | `kubectl auth can-i --list` |
 
-*Nota.* Elaborada a partir de `docs/03-devsecops/contenedores-k8s.md` sección 2 y `docs/04-ciberdefensa/evaluacion-contenedores.md` sección 2.
-
 ### 4.6 Hardening de infraestructura cloud
-
-*Autor: Josue. Fuente: `docs/03-devsecops/iac-hardening.md`*
 
 Terraform implementa Cloud SQL sin IPv4 pública, VPC con Private Service Access, CMEK, uniform bucket-level access, subred privada con NAT y flow logs, GKE Autopilot privado, cuentas de servicio separadas por ambiente, sink a BigQuery y backend de estado remoto en GCS.
 
 El análisis de IaC usa Checkov, tfsec y Kubesec con umbral HIGH/CRITICAL sobre los manifiestos renderizados, no sobre el YAML base: escanear sin renderizar produce falsos positivos de namespace y probes. Hay 13 excepciones documentadas con owner y fecha de vencimiento, todas por controles no configurables en Autopilot o por limitaciones del propio check. La excepción `CKV2_GCP_18` es la única cuyo motivo no coincide con la realidad, porque la red `default` sí existe con SSH y RDP abiertos (P-11, S-06).
 
 ### 4.7 Implementación de controles DevSecOps
-
-*Autor: Josue. Fuente: `docs/03-devsecops/pipeline.md`*
 
 El pipeline tiene nueve jobs: `secrets` (gitleaks), `sast` (Semgrep), `wpscan`, `sca-deps` (Composer/npm audit), `iac` (Checkov/tfsec/Kubesec), `container` (build + Trivy), `publish`, `deploy` y `smoke` (curl + ZAP baseline). Los pull requests ejecutan análisis y build; publicación y despliegue ocurren solo en `main`; el apply de Terraform exige `workflow_dispatch` sobre `main` y el environment protegido `infra-apply`.
 
@@ -440,8 +376,6 @@ La identidad usa OIDC/WIF sin claves JSON, con `id-token: write` solo donde hace
 ## 5. Operaciones y monitoreo
 
 ### 5.1 WAF
-
-*Autores: Arun (especificación) y James (aplicación). Fuente: `docs/05-operaciones/waf-cloudflare.md`*
 
 La Tabla 12 enumera las reglas activas y su verificación, siguiendo el modelo de reglas y acciones de Cloudflare WAF (Cloudflare, 2024).
 
@@ -457,13 +391,9 @@ La Tabla 12 enumera las reglas activas y su verificación, siguiendo el modelo d
 | W-06 | Editor de plugins y temas | block | 403 |
 | Cloud Armor | Allowlist de rangos de Cloudflare + SQLi/XSS/CVE | deny | 403 al origen directo |
 
-*Nota.* Elaborada a partir de `docs/05-operaciones/waf-cloudflare.md` sección 2 y `evidencias/fase5/waf-2026-11-24/edge-tests.md`.
-
 El WAF está en modo bloqueo desde el 25 de noviembre, no en modo observación. Esa decisión se tomó después de un smoke test contra un backend temporal, porque el plan Free no ofrece acción `log` para validar sin bloquear. Las reglas están acotadas por `http.host` a los tres nombres del proyecto para no afectar otros sitios de la zona. Cloud Armor actúa como segunda línea con su propia allowlist y sus reglas administradas (Google Cloud, 2024a).
 
 ### 5.2 RASP y protección en tiempo de ejecución
-
-*Autor: Arun. Fuente: `docs/05-operaciones/rasp-monitoreo.md`*
 
 El proyecto no implementa un RASP comercial; implementa el equivalente verificable: integridad de archivos, detección de procesos anómalos con Falco, filesystem de solo lectura y revisión de checksums. Se definieron doce señales RT-01 a RT-12, entre ellas shell en el pod, escritura en el webroot, archivo PHP nuevo en uploads, `kubectl exec` en producción y activación de plugin en producción.
 
@@ -471,17 +401,13 @@ Las reglas base de Falco están en `infra/falco/aurora_rules.yaml`. Falco en Aut
 
 ### 5.3 SIEM y correlación de eventos
 
-*Autor: Arun. Fuente: `docs/05-operaciones/siem.md`*
-
 La arquitectura usa Cloud Logging como colector, un sink a BigQuery como almacén de 90 días y Cloud Monitoring para alertas. Hay once consultas SQL (`Q-01` a `Q-11`) para fuerza bruta, exploit de plugin, IDOR, card testing, bypass de WAF, cambios de IAM/RBAC, integridad, egreso anómalo, `kubectl exec`, Host inválido y tasa de 5xx.
 
-Cloudflare Logpush no está disponible en el plan Free (`1004 logpush is not enabled`), así que la fuente de borde es el log del balanceador con la evaluación de Cloud Armor. El 27 de noviembre se confirmó que ese log ya recibe eventos: la consulta `logName:"logs/requests"` devolvió peticiones 200 y 302 con `backend_service_name`, y el filtro `jsonPayload.enforcedSecurityPolicy.outcome="DENY"` devolvió negaciones de la política `aurorashop-demo-edge` (Anexo E). Antes de esa fecha, el `BackendConfig` de `staging` no declaraba logging y el de `demo` ya lo tenía; se aplicó solo el recurso `BackendConfig`, sin tocar imágenes ni Ingress (`evidencias/fase5/logging-lb-2026-11-27.md`).
+Cloudflare Logpush no está disponible en el plan Free (`1004 logpush is not enabled`), así que la fuente de borde es el log del balanceador con la evaluación de Cloud Armor. El 27 de noviembre se confirmó que ese log ya recibe eventos: la consulta `logName:"logs/requests"` devolvió peticiones 200 y 302 con `backend_service_name`, y el filtro `jsonPayload.enforcedSecurityPolicy.outcome="DENY"` devolvió negaciones de la política `aurorashop-demo-edge` (Anexo E). Antes de esa fecha, el `BackendConfig` de `staging` no declaraba logging y el de `demo` ya lo tenía; se aplicó solo el recurso `BackendConfig`, sin tocar imágenes ni Ingress.
 
 Las consultas pasan el parser de BigQuery pero no se han ejecutado porque el responsable no tiene `roles/bigquery.jobUser`. Se presentan como consultas validadas sintácticamente, no como resultados.
 
 ### 5.4 Alertas y dashboards
-
-*Autor: Arun. Fuente: `docs/05-operaciones/siem.md` secciones 4-5*
 
 Hay ocho alertas definidas (AL-01 a AL-08) sobre Cloud Logging, con severidad y destino. Tres tienen plantilla JSON en `infra/siem/alerts/`: AL-02 (acceso a pedido ajeno), AL-04 (shell en pod) y AL-07 (origen accedido sin Cloudflare). El dashboard mínimo cubre peticiones frente a bloqueos por regla, top IP/país/ASN, logins y MFA, pedidos, 403 por endpoint, auditoría y estado de pods.
 
@@ -489,15 +415,11 @@ Ninguna alerta se ha disparado en prueba controlada. El documento exige registra
 
 ### 5.5 Gestión continua de vulnerabilidades
 
-*Autores: Josue y Arun. Fuentes: `docs/03-devsecops/pipeline.md`, `docs/03-devsecops/sast-sca.md`*
-
 El ciclo combina análisis automáticos y una decisión humana registrada. WPScan corre cada semana y en cada push a producción; Semgrep y Composer audit acompañan cada pull request; Trivy se ejecuta en cada construcción de imagen; y Checkov, tfsec y Kubesec revisan la infraestructura y los manifiestos ya renderizados. Ningún hallazgo se cierra por silencio: recibe identificador, severidad, alcanzabilidad, decisión, responsable y evidencia. La debilidad conocida es el gate de WPScan, que hoy deja pasar un CVE sin CVSS; mientras no se corrija, el triaje de plugins depende de una persona y no del pipeline.
 
 La debilidad conocida es S-04: el gate de WPScan falla abierto. Hasta corregirlo, la gestión de vulnerabilidades de plugins depende del triaje manual y no del pipeline.
 
 ### 5.6 Tratamiento del riesgo
-
-*Autor: Arun con Javier. Fuentes: `docs/05-operaciones/tratamiento-riesgo.md`, `docs/05-operaciones/heatmap.md`*
 
 La Tabla 13 resume el tratamiento por grupo; la Figura 3 y la Figura 4 muestran la superficie y la evolución del heatmap.
 
@@ -509,7 +431,7 @@ La Tabla 13 resume el tratamiento por grupo; la Figura 3 y la Figura 4 muestran 
 | P-NN (perímetro) | 13 | 9 cumplen o no aplican | 2 (P-11, P-13) | 1 (P-12) |
 | S-NN (proceso) | 8 | 4 falsos positivos | 2 (S-04, S-06) | 2 (S-03, S-07) |
 
-*Nota.* Elaborada a partir de `docs/05-operaciones/tratamiento-riesgo.md` sección 3. P-09 se contabiliza dentro de H-08.
+*Nota.* P-09 se contabiliza dentro de H-08.
 
 El heatmap pasa de 11 críticos, 13 altos y 4 medios a cero críticos, cero altos, 12 medios y 16 bajos con los controles probados al 27 de noviembre. Cinco de esos medios bajan a bajo cuando se cierren sus controles pendientes: red `default`, scraping, alertas, restore de backups y branch protection con gate de WPScan. Los otros siete quedan como residual tolerable de 9 o menos. TLS/HSTS y el Access del panel bajaron a bajo el 27 de noviembre.
 
@@ -517,21 +439,17 @@ El heatmap pasa de 11 críticos, 13 altos y 4 medios a cero críticos, cero alto
 
 ![Superficie de ataque por zonas de confianza](figuras/figura-3-superficie.png){width=15.5cm}
 
-*Nota.* Exportada desde el diagrama de `docs/04-ciberdefensa/superficie-ataque.md` sección 1.
-
 **Figura 4.** Heatmap antes / residual / objetivo
 
 ![Heatmap de riesgos: inicial, residual actual y objetivo](figuras/figura-4-heatmap.png){width=15.5cm}
 
-*Nota.* Elaborada con los conteos por zona de `docs/05-operaciones/heatmap.md` sección 5: inicial 11/13/4/0, residual actual 0/0/12/16 y objetivo 0/0/7/21 sobre 28 riesgos.
+*Nota.* Conteos por zona: inicial 11/13/4/0, residual actual 0/0/12/16 y objetivo 0/0/7/21 sobre 28 riesgos.
 
 ---
 
 ## 6. Dictamen y mejores prácticas
 
 ### 6.1 Conclusiones
-
-*Autor: James. Síntesis de secciones 1-5*
 
 1. **El sistema resistió la evaluación ofensiva ejecutada.** Dieciséis controles de caja negra y catorce de caja gris quedaron confirmados; no hubo IDOR, XSS almacenado, SQLi, CSRF, upload ejecutable ni manipulación de precio. Los casos de abuso de negocio quedaron cinco bloqueados y tres parciales, ninguno explotado.
 2. **La seguridad del CMS dependió de configuración, no de parches.** Con WordPress y WooCommerce en su última versión, cero CVE que afectaran lo instalado y cero hallazgos de Semgrep en el código propio, el riesgo se movió al borde, a la plataforma y al proceso.
@@ -540,8 +458,6 @@ El heatmap pasa de 11 críticos, 13 altos y 4 medios a cero críticos, cero alto
 5. **La evidencia mandó sobre la narrativa.** El informe reabrió P-07 contra el texto del pentest y degradó A06 por el gate de WPScan. Esa disciplina es el principal activo metodológico del trabajo.
 
 ### 6.2 Recomendaciones técnicas
-
-*Autores: James con los leads. Fuente: `docs/05-operaciones/tratamiento-riesgo.md` sección 5*
 
 Prioridad inmediata, antes de cualquier demostración con datos sensibles:
 
@@ -563,8 +479,6 @@ Prioridad de endurecimiento:
 
 ### 6.3 Roadmap de seguridad continua
 
-*Autor: James*
-
 | Horizonte | Acción | Métrica de aceptación |
 |---|---|---|
 | 0-30 días | Cerrar P-11, P-13, H-11 y H-12; alertas probadas; restore medido; correos del equipo en Access | 0 hallazgos abiertos salvo los aceptados; TLS 1.0/1.1 rechazados; HSTS presente |
@@ -575,8 +489,6 @@ Prioridad de endurecimiento:
 *Nota.* Las métricas son objetivos de aceptación, no resultados alcanzados. El estado de partida es el de la Tabla 13.
 
 ### 6.4 Lecciones aprendidas
-
-*Síntesis de James a partir de los documentos de cada componente; cada responsable valida su párrafo en la revisión del PR.*
 
 **Gobierno de activos y riesgo (Javier).** El inventario de diseño sirvió para priorizar, pero fue el contraste contra el clúster el que reveló las brechas reales: la red `default` abierta y el bucket de logs no estaban en el modelo hasta que se miró la infraestructura en vivo. Un inventario que no se contrasta se convierte en ficción administrativa.
 
@@ -592,15 +504,15 @@ Prioridad de endurecimiento:
 
 Los anexos se entregan como material del repositorio, no como capturas embebidas en este Markdown.
 
-| Anexo | Contenido | Ubicación | Estado |
-|---|---|---|---|
-| A | Inventario completo de activos con todos sus campos | `docs/01-activos-riesgos/inventario-activos.md` | Completo |
-| B | Matriz de riesgos, DREAD y STRIDE completos | `docs/01-activos-riesgos/` | Completo |
-| C | Reportes de caja negra, caja gris, OWASP, abuso y superficie | `evidencias/fase2/*2026-11-26.md` | Completo |
-| D | Triaje SAST/SCA/WPScan y pruebas de contenedores | `evidencias/fase3/` | Completo |
-| E | Pruebas de borde, estado de Cloudflare y logging del LB | `evidencias/fase5/` | Completo al 2026-11-27 |
-| F | Diagramas editables (C4, checkout, cadena de suministro, heatmap) | `docs/02-arquitectura/diagramas/`, `docs/05-operaciones/heatmap.md`; PNG en `docs/06-informe/figuras/` | Fuente Mermaid y exportación PNG 1-4 |
-| G | Workflows de CI y consultas SQL del SIEM | `.github/workflows/`, `infra/siem/queries/` | Completo |
+| Anexo | Contenido | Estado |
+|---|---|---|
+| A | Inventario completo de activos | Completo |
+| B | Matriz de riesgos, DREAD y STRIDE | Completo |
+| C | Reportes de caja negra, caja gris, OWASP, abuso y superficie | Completo |
+| D | Triaje SAST/SCA/WPScan y pruebas de contenedores | Completo |
+| E | Pruebas de borde, estado de Cloudflare y logging del balanceador | Completo al 2026-11-27 |
+| F | Diagramas de arquitectura, checkout, suministro y heatmap | Fuente Mermaid y PNG 1-4 |
+| G | Workflows de integración continua y consultas del SIEM | Completo |
 
 ### 6.6 Referencias
 
@@ -642,7 +554,8 @@ Shostack, A. (2014). *Threat modeling: Designing for security*. Wiley.
 |---|---|---|---|
 | 0.1 | 2026-11-18 | Esqueleto y asignación de secciones (Opción B) | James |
 | 0.2 | 2026-11-27 | Redacción completa de sección 1-sección 6, referencias APA y anexos; logging del LB aplicado y verificado en `staging` | James |
-| 0.3 | 2026-11-27 | Figuras 1-4 exportadas a PNG y embebidas; DOCX y PDF generados en `docs/06-informe/salida/` (Arial 12, 1.5, márgenes 2.54 cm) | James |
+| 0.3 | 2026-11-27 | Figuras 1-4 exportadas a PNG y embebidas; DOCX y PDF generados en la carpeta de salida (Arial 12, 1.5, márgenes 2.54 cm) | James |
 | 0.4 | 2026-11-27 | Cierre verificado de P-07, P-08, P-09/H-08 y P-10; política Access con cinco correos; residual 12 medios / 16 bajos; recomendaciones y roadmap actualizados | James |
 | 0.5 | 2026-11-27 | Salida en APA 7: portada con título en negrita, jerarquía de encabezados, tablas/figuras con número y título en cursiva, referencias con sangría francesa | James |
 | 0.6 | 2026-11-27 | Carátula UMG basada en el formato de los informes previos; signos tipográficos normalizados; referencias reducidas a 16 y párrafos reescritos con redacción propia | James |
+| 0.7 | 2026-11-27 | Se retiran las líneas de autoría y fuente por sección y las rutas de archivo del cuerpo, las notas y los anexos | James |
