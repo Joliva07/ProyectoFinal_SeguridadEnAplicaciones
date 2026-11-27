@@ -25,7 +25,7 @@ flowchart LR
 | Fuente | Destino | Retención | Aporta |
 |---|---|---|---|
 | Cloudflare Logpush | GCS → BigQuery | 90 días | IP, país, regla WAF, acción, bot score. **No disponible**: el plan Free devuelve `1004 logpush is not enabled` (`evidencias/fase5/waf-2026-11-24/estado-cloudflare.md`). Se compensa con los logs del balanceador y de Cloud Armor, más Cloudflare Analytics en el dashboard |
-| Balanceador + Cloud Armor | Cloud Logging | 30 días | peticiones rechazadas al origen (AL-07). La `BackendConfig` ya declara `logging.enable: true` con `sampleRate: 1.0`; falta reaplicar el overlay para que Cloud Logging reciba los eventos |
+| Balanceador + Cloud Armor | Cloud Logging | 30 días | peticiones rechazadas al origen (AL-07). `logging.enable: true` con `sampleRate: 1.0` aplicado en `demo` y `staging`; LB y Cloud Armor ya escriben en el log `requests` (verificado el 2026-11-27, `evidencias/fase5/logging-lb-2026-11-27.md`) |
 | Nginx/PHP (pods) | Cloud Logging → sink | 30 días + 90 en BQ | ruta, usuario, status, latencia, `request_id` |
 | WooCommerce (auditoría) | Cloud Logging | 30 días | pedidos, cupones, exportaciones, autor |
 | Cloud Audit Logs (admin) | sink a BQ | 90 días | IAM, `exec`, cambios de recursos |
