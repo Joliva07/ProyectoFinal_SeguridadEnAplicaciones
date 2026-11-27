@@ -68,7 +68,7 @@ Toda tabla de herramienta (ZAP, Semgrep, Trivy) cita su documentación oficial e
 | Figura 3 | Superficie de ataque por zonas | Horacio |
 | Figura 4 | Heatmap antes / residual / objetivo | Arun |
 
-Las figuras 1–4 están en el informe como referencia a su fuente Mermaid y quedan pendientes de exportación a PNG/SVG para la versión Word.
+Las figuras 1–4 están exportadas en `docs/06-informe/figuras/` (PNG) y embebidas en el informe; su fuente editable es Mermaid.
 
 ## 6. Checklist previo a la entrega
 

@@ -28,7 +28,7 @@ Riesgo residual: cero críticos y cero altos; 14 medios y 14 bajos. De 12 hallaz
 
 ## Índice general
 
-Campo automático de Word. El documento se entrega en Markdown y se convierte a `.docx` antes de generar el PDF; la numeración de tablas y figuras se verifica en esa conversión.
+Índice generado a partir de los títulos del documento y de las páginas del PDF de `docs/06-informe/salida/`; si se edita el contenido, se regenera con el mismo procedimiento.
 
 ---
 
@@ -116,15 +116,19 @@ El scope técnico se fijó en cinco principios verificables: Zero Trust, borde p
 
 La Figura 1 resume el flujo; su fuente editable es `docs/02-arquitectura/diagramas/c4-contenedores.mmd`.
 
-**Figura 1.** Arquitectura de seguridad de AuroraShop (contexto y contenedores)
+**Figura 1.** Arquitectura de contenedores de AuroraShop
 
-*Pendiente de exportación a PNG/SVG desde `c4-contexto.mmd` y `c4-contenedores.mmd` para la versión Word. El diagrama Mermaid equivalente está en `docs/02-arquitectura/arquitectura-seguridad.md` §2.*
+![Arquitectura de contenedores de AuroraShop](figuras/figura-1-arquitectura.png){width=15.5cm}
+
+*Nota.* Exportada desde `docs/02-arquitectura/diagramas/c4-contenedores.mmd`; el diagrama de contexto C4 está en `c4-contexto.mmd`.
 
 El flujo de checkout agrega dos controles que no son evidentes en el diagrama de contenedores: recálculo de precios en servidor y autorización por objeto del pedido. La Figura 2 documenta ese recorrido.
 
 **Figura 2.** Flujo de checkout con controles
 
-*Pendiente de exportación desde `docs/02-arquitectura/diagramas/flujo-checkout.mmd`.*
+![Flujo de checkout con controles](figuras/figura-2-checkout.png){width=15.5cm}
+
+*Nota.* Exportada desde `docs/02-arquitectura/diagramas/flujo-checkout.mmd`.
 
 ---
 
@@ -493,11 +497,15 @@ El heatmap pasa de 11 críticos, 13 altos y 4 medios a cero críticos, cero alto
 
 **Figura 3.** Superficie de ataque por zonas de confianza
 
-*Pendiente de exportación desde `docs/04-ciberdefensa/superficie-ataque.md` §1; el diagrama Mermaid está en ese documento.*
+![Superficie de ataque por zonas de confianza](figuras/figura-3-superficie.png){width=15.5cm}
+
+*Nota.* Exportada desde el diagrama de `docs/04-ciberdefensa/superficie-ataque.md` §1.
 
 **Figura 4.** Heatmap antes / residual / objetivo
 
-*Pendiente de exportación desde `docs/05-operaciones/heatmap.md` §§3–4; los diagramas Mermaid están en ese documento.*
+![Heatmap de riesgos: inicial, residual actual y objetivo](figuras/figura-4-heatmap.png){width=15.5cm}
+
+*Nota.* Elaborada con los conteos por zona de `docs/05-operaciones/heatmap.md` §5: inicial 11/13/4/0, residual actual 0/0/14/14 y objetivo 0/0/7/21 sobre 28 riesgos.
 
 ---
 
@@ -574,7 +582,7 @@ Los anexos se entregan como material del repositorio, no como capturas embebidas
 | C | Reportes de caja negra, caja gris, OWASP, abuso y superficie | `evidencias/fase2/*2026-11-26.md` | Completo |
 | D | Triaje SAST/SCA/WPScan y pruebas de contenedores | `evidencias/fase3/` | Completo |
 | E | Pruebas de borde, estado de Cloudflare y logging del LB | `evidencias/fase5/` | Completo al 2026-11-27 |
-| F | Diagramas editables (C4, checkout, cadena de suministro, heatmap) | `docs/02-arquitectura/diagramas/`, `docs/05-operaciones/heatmap.md` | Fuente Mermaid; exportación pendiente |
+| F | Diagramas editables (C4, checkout, cadena de suministro, heatmap) | `docs/02-arquitectura/diagramas/`, `docs/05-operaciones/heatmap.md`; PNG en `docs/06-informe/figuras/` | Fuente Mermaid y exportación PNG 1–4 |
 | G | Workflows de CI y consultas SQL del SIEM | `.github/workflows/`, `infra/siem/queries/` | Completo |
 
 ### 6.6 Referencias
@@ -639,3 +647,4 @@ WPScan. (2024). *WPScan WordPress security scanner*. https://github.com/wpscante
 |---|---|---|---|
 | 0.1 | 2026-11-18 | Esqueleto y asignación de secciones (Opción B) | James |
 | 0.2 | 2026-11-27 | Redacción completa de §1–§6, referencias APA y anexos; logging del LB aplicado y verificado en `staging` | James |
+| 0.3 | 2026-11-27 | Figuras 1–4 exportadas a PNG y embebidas; DOCX y PDF generados en `docs/06-informe/salida/` (Arial 12, 1.5, márgenes 2.54 cm) | James |
