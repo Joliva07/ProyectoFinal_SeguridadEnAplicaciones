@@ -648,3 +648,4 @@ WPScan. (2024). *WPScan WordPress security scanner*. https://github.com/wpscante
 | 0.2 | 2026-11-27 | Redacción completa de §1–§6, referencias APA y anexos; logging del LB aplicado y verificado en `staging` | James |
 | 0.3 | 2026-11-27 | Figuras 1–4 exportadas a PNG y embebidas; DOCX y PDF generados en `docs/06-informe/salida/` (Arial 12, 1.5, márgenes 2.54 cm) | James |
 | 0.4 | 2026-11-27 | Cierre verificado de P-07, P-08, P-09/H-08 y P-10; política Access con cinco correos; residual 12 medios / 16 bajos; recomendaciones y roadmap actualizados | James |
+| 0.5 | 2026-11-27 | Salida en APA 7: portada con título en negrita, jerarquía de encabezados, tablas/figuras con número y título en cursiva, referencias con sangría francesa | James |

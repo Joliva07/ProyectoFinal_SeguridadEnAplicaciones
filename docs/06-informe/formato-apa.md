@@ -13,9 +13,9 @@ Dueño: **James** · Verificación final antes de generar el PDF
 | Justificación | Texto justificado | excepto títulos |
 | Numeración | Esquina inferior derecha, desde la introducción | Insertar → Número de página |
 | Títulos | Jerarquía 1, 1.1, 1.1.1 | Estilos de Word, no negrita manual |
-| Tablas | Número y título arriba (`Tabla 1`), nota debajo | numeración corrida |
-| Figuras | Número y título arriba (`Figura 1`), nota debajo | fuente citada si es ajena |
-| Referencias | Sangría francesa, orden alfabético, APA 7 | ≥ 15 fuentes |
+| Tablas | `Tabla N` en negrita y título en cursiva arriba; nota 10 pt debajo | numeración corrida |
+| Figuras | `Figura N` en negrita y título en cursiva arriba; nota 10 pt debajo | fuente citada si es ajena |
+| Referencias | Sangría francesa 1.27 cm, alineación izquierda, orden alfabético, APA 7 | ≥ 15 fuentes |
 | Anexos | Rotulados A, B, C | referenciados en el texto |
 
 ## 2. Estructura
@@ -69,6 +69,23 @@ Toda tabla de herramienta (ZAP, Semgrep, Trivy) cita su documentación oficial e
 | Figura 4 | Heatmap antes / residual / objetivo | Arun |
 
 Las figuras 1–4 están exportadas en `docs/06-informe/figuras/` (PNG) y embebidas en el informe; su fuente editable es Mermaid.
+
+## 5.1 APA 7 aplicado en la exportación
+
+La versión Word/PDF se genera desde `informe-final.md` y aplica estas convenciones de APA 7:
+
+| Elemento | Tratamiento |
+|---|---|
+| Portada | Título en negrita, centrado; autoría, afiliación, curso, docente y fecha centrados |
+| Nivel 1 | Centrado y en negrita (título del documento, resumen) |
+| Nivel 2 | Alineado a la izquierda y en negrita |
+| Nivel 3 | Alineado a la izquierda, negrita y cursiva |
+| Tablas | `Tabla N` en negrita; título en cursiva; encabezado de columna en negrita; nota 10 pt |
+| Figuras | `Figura N` en negrita; título en cursiva; nota 10 pt |
+| Referencias | Sangría francesa de 1.27 cm, alineación izquierda (no justificada), orden alfabético |
+| Citas | Autor-fecha en el cuerpo; cada entrada de la lista está citada al menos una vez |
+
+Se conservan por requisito de la cátedra: Arial 12, interlineado 1.5, márgenes de 2.54 cm, texto justificado y numeración inferior derecha. APA 7 pediría doble espacio y número en la esquina superior derecha; prevalece la norma UMG, documentada en el §1.
 
 ## 6. Checklist previo a la entrega
 
