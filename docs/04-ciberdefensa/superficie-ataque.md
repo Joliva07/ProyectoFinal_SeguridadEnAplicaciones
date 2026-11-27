@@ -1,6 +1,6 @@
 # Superficie de ataque y perímetro del software
 
-Dueño: **Horacio** · Verificación: James (borde) · Componente de rúbrica 3 · Issue #47 · Corte: 2026-11-26
+Dueño: **Horacio** · Verificación: James (borde) · Componente de rúbrica 3 · Issue #47 · Corte: 2026-11-27
 
 ## 1. Zonas de confianza
 
@@ -30,15 +30,15 @@ Regla verificada: nada fuera de Cloudflare llega al pod (Cloud Armor deniega el 
 | `/wp-json/` | Índice REST | — | lista de rutas | reconocimiento | aceptado (estándar de WordPress) | 200 |
 | `/wp-json/wc/v3/*` | REST WooCommerce | claves de API | pedidos, clientes | IDOR | autenticación + permisos | 401 |
 | `/wp-json/wc/store/v1/*` | Store API (carrito) | nonce | carrito, productos | manipulación | nonce + recálculo en servidor | productos 200; carrito sin nonce 401 |
-| `/wp-admin/*` | Administración | sesión + 2FA | todo | toma de control | 2FA obligatorio; Access **no** aplicado (P-09) | 302 al login |
-| `admin-aurorashop.../` | Administración | **sin Access** | todo | toma de control | debía tener Cloudflare Access | 302 al login del dominio principal |
+| `/wp-admin/*` | Administración | sesión + 2FA + Access | todo | toma de control | Access en `admin-` desde 2026-11-27 | 302 al login |
+| `admin-aurorashop.../` | Administración | Cloudflare Access | todo | toma de control | aplicación Access con política Allow | 302 a `alzentis.cloudflareaccess.com` |
 | `/wp-content/uploads/*` | Media | — | imágenes, PDF | shell | sin ejecución ni listado | `.php` 403; listado 403 |
 | `/wp-content/plugins/*/readme.txt` y `*.php` | Metadatos/código | — | versión | fingerprint | Nginx | 403 |
 | `/?author=1`, `/author/<slug>/`, sitemap de usuarios | Enumeración | — | usuarios | fuerza bruta dirigida | mu-plugin (#44) | 404 |
 | `/readme.html`, `.git/`, `.env`, `*.bak`, `debug.log`, instalador | Archivos sensibles | — | versión, secretos | fuga | Nginx | 403 |
 | `/wp-cron.php` | Tareas programadas | — | — | carga | pendiente CronJob (P-12) | 200 |
 | `checkout/order-received/<id>` | Post-compra | sesión o clave | pedido | IDOR | propiedad del pedido | sin datos ajenos (A01-2/3) |
-| `staging-aurorashop...` | Réplica | — | — | registro DNS huérfano | eliminar el registro (P-10) | 502 |
+| `staging-aurorashop...` | Réplica | — | — | registro DNS huérfano | registro eliminado el 2026-11-27 | no resuelve |
 | IP del balanceador (directo) | Origen | — | app | bypass del WAF | Cloud Armor: solo rangos de Cloudflare | 403 con Host; 404 sin Host |
 | API de GKE | Plano de control | IAM | clúster | control total | endpoint privado, sin acceso externo por DNS | sin endpoint público |
 
@@ -63,10 +63,10 @@ No se corrió `nmap`: el único servicio público es el balanceador HTTPS de Goo
 | P-04 | `readme.html` / `?ver=` / generator | Internet | sin versión | 403; `ver` opaco; sin generator | ✅ cumple | — |
 | P-05 | `staging` | Internet | Access | no existe réplica (ver P-10) | n/a | — |
 | P-06 | API de GKE | Internet | privada | `enablePublicEndpoint: false`, DNS sin tráfico externo | ✅ cumple | — |
-| P-07 | TLS en el borde | Internet | mínimo TLS 1.2 | **acepta TLS 1.0** | ❌ abierto | James (Cloudflare → *Minimum TLS Version* 1.2) |
-| P-08 | HSTS | Internet | `Strict-Transport-Security` | **ausente** | ❌ abierto | James (Cloudflare → HSTS) |
-| P-09 | `admin-aurorashop` y `/wp-admin` | Internet | Cloudflare Access | **sin Access**; protegido solo por contraseña + 2FA | ⚠️ parcial | James (H-08) |
-| P-10 | `staging-aurorashop` | Internet | sin registro o con Access | registro DNS que responde 502 | ⚠️ abierto | James (borrar el registro) |
+| P-07 | TLS en el borde | Internet | mínimo TLS 1.2 | TLS 1.0/1.1 rechazados, TLS 1.2 OK (2026-11-27) | ✅ cumple | — |
+| P-08 | HSTS | Internet | `Strict-Transport-Security` | `max-age=31536000` (2026-11-27) | ✅ cumple | — |
+| P-09 | `admin-aurorashop` y `/wp-admin` | Internet | Cloudflare Access | Access en `admin-`; 302 a `alzentis.cloudflareaccess.com` (2026-11-27) | ✅ cumple | — |
+| P-10 | `staging-aurorashop` | Internet | sin registro o con Access | registro DNS eliminado; no resuelve (2026-11-27) | ✅ cumple | — |
 | P-11 | Red `default` de GCP | Internet | sin reglas abiertas | SSH 22 y RDP 3389 desde `0.0.0.0/0` (sin VMs en esa red) | ⚠️ abierto | Josue/James (borrar la red `default` en Terraform) |
 | P-12 | `wp-cron.php` | Internet | no público | 200 | ⚠️ aceptado temporal | Horacio (CronJob + `DISABLE_WP_CRON`) |
 | P-13 | Rama `main` en GitHub | Equipo | PR obligatorio | sin *branch protection* | ⚠️ abierto | Josue (regla de rama) |

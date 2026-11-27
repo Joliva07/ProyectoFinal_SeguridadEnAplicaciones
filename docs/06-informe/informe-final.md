@@ -16,11 +16,11 @@ AuroraShop es una tienda WordPress 7.1.5 + WooCommerce 11.3.1 en GKE Autopilot, 
 
 El método siguió el ciclo ISO/IEC 27001:2022: inventario de 26 activos —15 críticos—, STRIDE, DREAD y una matriz de 28 riesgos (Javier Oliva); arquitectura Zero Trust con segmentación, CMEK y Workload Identity (Josue); pentest de caja negra y caja gris con verificación OWASP independiente (Horacio y Arun); y un pipeline con gitleaks, Semgrep, WPScan, Composer audit, Trivy, Checkov/tfsec y Kubesec.
 
-Tres hallazgos principales. Primero, el perímetro resistió: el origen responde 403 fuera de Cloudflare, XML-RPC da 403, el login devuelve 429 desde el tercer intento, 28 rutas sensibles dan 403/404 y no hubo IDOR, XSS almacenado, SQLi ni manipulación de precio en las pruebas ejecutadas. Segundo, la autorización de WooCommerce es sólida cuando se configura bien: cinco casos de abuso quedaron bloqueados y la única fuga real (H-09, descarga sin sesión) se corrigió con regresión. Tercero, las brechas restantes son de configuración y proceso: TLS 1.0/1.1 sin HSTS, `admin-` sin Cloudflare Access, `staging` con DNS huérfano (502), red `default` con SSH/RDP abiertos, `main` sin branch protection, el gate de WPScan fallando abierto (S-04), CORS permisivo (H-11) y catálogo sin límite de tasa (H-12).
+Tres hallazgos principales. Primero, el perímetro resistió: el origen responde 403 fuera de Cloudflare, XML-RPC da 403, el login devuelve 429 desde el tercer intento, 28 rutas sensibles dan 403/404 y no hubo IDOR, XSS almacenado, SQLi ni manipulación de precio en las pruebas ejecutadas. Segundo, la autorización de WooCommerce es sólida cuando se configura bien: cinco casos de abuso quedaron bloqueados y la única fuga real (H-09, descarga sin sesión) se corrigió con regresión. Tercero, las brechas restantes son de configuración y proceso: red `default` con SSH/RDP abiertos, `main` sin branch protection, el gate de WPScan fallando abierto (S-04), CORS permisivo (H-11) y catálogo sin límite de tasa demostrado (H-12); TLS, HSTS, Access y el DNS de staging se cerraron el 27 de noviembre.
 
 Controles implementados y verificados: WAF en bloqueo con cinco reglas y rate limit, Cloud Armor con allowlist, Pod Security `restricted`, NetworkPolicy default-deny, secretos por CSI, CMEK, 2FA obligatorio y logs centralizados; el 27 de noviembre se confirmó que Cloud Logging recibe peticiones del balanceador y denegaciones de Cloud Armor.
 
-Riesgo residual: cero críticos y cero altos; 14 medios y 14 bajos. De 12 hallazgos, ocho cerrados o no reproducidos, tres abiertos y uno aceptado. Dictamen: apto como demo académica con evidencia reproducible; no apto para producción con pagos reales hasta cerrar los controles pendientes del roadmap de 30 días.
+Riesgo residual: cero críticos y cero altos; 12 medios y 16 bajos. De 12 hallazgos, nueve cerrados o no reproducidos, dos abiertos y uno aceptado. Dictamen: apto como demo académica con evidencia reproducible; no apto para producción con pagos reales hasta cerrar los controles pendientes del roadmap de 30 días.
 
 **Palabras clave:** seguridad de aplicaciones, WordPress, WooCommerce, GKE, Zero Trust, WAF, DevSecOps, ISO 27001.
 
@@ -96,7 +96,7 @@ La Tabla 2 delimita el alcance acordado; todo lo que no figura en la columna izq
 
 *Nota.* Elaborada a partir de `docs/00-plan/alcance.md` §§3–5.
 
-Los ambientes tienen propósitos distintos y eso condiciona la evidencia: `demo` es público y se usa para pentest; `staging` debía ser la réplica para pruebas destructivas, pero al 27 de noviembre responde 502 por un registro DNS huérfano (P-10). `dev` existe en el clúster pero sus pods llevan dos días en `Init:0/1`; no se usó como fuente de evidencia. El ambiente `break-glass` es un procedimiento operado solo por James, no un despliegue permanente.
+Los ambientes tienen propósitos distintos y eso condiciona la evidencia: `demo` es público y se usa para pentest; `staging` debía ser la réplica para pruebas destructivas, pero respondía 502 por un registro DNS huérfano y el 27 de noviembre se eliminó ese registro (P-10 cerrado). `dev` existe en el clúster pero sus pods llevan dos días en `Init:0/1`; no se usó como fuente de evidencia. El ambiente `break-glass` es un procedimiento operado solo por James, no un despliegue permanente.
 
 Una restricción material del alcance es el plan Cloudflare Free: cinco reglas custom, sin acción `log`, sin regex y una sola regla de rate limiting con mitigación máxima de 10 segundos. Todo control que exceda esa cuota se declara como limitación y se compensa en Cloud Armor, Nginx o la aplicación (`docs/05-operaciones/waf-cloudflare.md` §2).
 
@@ -239,15 +239,15 @@ La Tabla 7 lista los hallazgos vigentes al corte.
 |---|---|---|---|---|
 | H-11 | REST refleja cualquier `Origin` con `credentials: true` | `/wp-json/` | Baja | Abierto |
 | H-12 | Catálogo sin límite de tasa (scraping) | `/shop/` | Baja | Abierto |
-| P-08 | Sin HSTS | Borde | Media | Abierto |
-| P-10 | `staging` responde 502 por DNS huérfano | Borde | Baja | Abierto |
+| P-08 | Sin HSTS | Borde | Media | Cerrado (2026-11-27) |
+| P-10 | `staging` responde 502 por DNS huérfano | Borde | Baja | Cerrado (2026-11-27) |
 | P-12 | `wp-cron.php` público | Aplicación | Baja | Aceptado temporal |
 
 *Nota.* Elaborada a partir de `docs/04-ciberdefensa/pentest-caja-negra.md` §4 y `superficie-ataque.md` §4.
 
 El pentest confirmó controles que conviene registrar porque son los que sostienen el dictamen: el origen no es descubrible por `nmap` (solo se ve la malla de Cloudflare), SSH/MySQL/RDP están filtrados, `readme.html` y los archivos sensibles dan 403, `?author=1` da 404, la versión de núcleo y WooCommerce está oculta, el registro público está deshabilitado y no hubo XSS reflejado, SQLi basada en error ni trazas de aplicación.
 
-Hay una corrección metodológica relevante: el documento de caja negra declaró P-07 (TLS 1.0) como corregido, pero la verificación independiente de Arun del mismo día demostró que los handshakes TLS 1.0 y 1.1 se completaban. El estado válido es el de `superficie-ataque.md` y `tratamiento-riesgo.md`: P-07 sigue abierto. Esta discrepancia se documenta en lugar de ocultarse porque explica por qué el informe exige doble verificación de todo control declarado.
+Hay una corrección metodológica relevante: el documento de caja negra declaró P-07 (TLS 1.0) como corregido, pero la verificación independiente de Arun del mismo día demostró que los handshakes TLS 1.0 y 1.1 se completaban. El control se aplicó de verdad el 27 de noviembre (*Minimum TLS Version* 1.2) y se verificó con `curl --tlsv1.0/--tlsv1.1`, que ahora fallan. La secuencia —declarado, reabierto, corregido y probado— es el ejemplo que justifica la doble verificación de todo control.
 
 ### 3.2 Pentesting caja gris / blanca
 
@@ -270,19 +270,19 @@ La Tabla 8 resume el estado verificado de las diez categorías.
 | Código | Categoría | Estado verificado | Brecha |
 |---|---|---|---|
 | A01 | Broken Access Control | Mitigado | — |
-| A02 | Cryptographic Failures | Parcial | P-07 TLS 1.0/1.1, P-08 sin HSTS |
+| A02 | Cryptographic Failures | Mitigado | — |
 | A03 | Injection | Mitigado | — |
 | A04 | Insecure Design | Mitigado | — |
 | A05 | Security Misconfiguration | Parcial | P-11 red `default`, P-12 `wp-cron`, H-11 CORS |
 | A06 | Vulnerable Components | Parcial | S-04 el gate de WPScan falla abierto |
-| A07 | Authentication Failures | Mitigado | P-09 `admin-` sin Access (relacionado) |
+| A07 | Authentication Failures | Mitigado | — |
 | A08 | Integrity Failures | Parcial | P-13 `main` sin branch protection |
 | A09 | Logging/Monitoring Failures | Parcial | AL-01..AL-08 sin prueba de disparo |
 | A10 | SSRF | Mitigado | — |
 
-*Nota.* Estado posterior a la verificación de Arun del 2026-11-26 (`owasp-web-top10.md` §5): 5 mitigados, 5 parciales, 0 abiertos.
+*Nota.* Estado posterior a la verificación de Arun del 2026-11-26 y a los cierres del 2026-11-27 (`owasp-web-top10.md` §§4–5): 6 mitigados, 4 parciales, 0 abiertos.
 
-La verificación de Arun cambió dos filas respecto de la evaluación original: A06 pasó de mitigado a parcial porque el gate de WPScan no bloquea cuando la API no devuelve CVSS, y A02 se mantuvo parcial porque P-07 seguía abierto. Ese ajuste es el ejemplo más claro de la regla del proyecto: un control no se declara mitigado por estar configurado, sino por haber sido probado.
+La verificación de Arun cambió dos filas respecto de la evaluación original: A06 pasó de mitigado a parcial porque el gate de WPScan no bloquea cuando la API no devuelve CVSS, y A02 se mantuvo parcial mientras P-07 y P-08 siguieran abiertos. A02 pasó a mitigado el 27 de noviembre al fijar TLS 1.2 mínimo y HSTS. Ese ajuste es el ejemplo más claro de la regla del proyecto: un control no se declara mitigado por estar configurado, sino por haber sido probado.
 
 ### 3.4 Evaluación de plugins y temas
 
@@ -487,13 +487,13 @@ La Tabla 13 resume el tratamiento por grupo; la Figura 3 y la Figura 4 muestran 
 
 | Grupo | Total | Cerrado / no reproducido | Abierto | Aceptado |
 |---|---:|---:|---:|---:|
-| H-NN (hallazgos) | 12 | 8 | 3 (H-08, H-11, H-12) | 1 (H-10) |
-| P-NN (perímetro) | 13 | 6 cumplen o no aplican | 5 (P-07, P-08, P-10, P-11, P-13) + P-09 parcial | 1 (P-12) |
+| H-NN (hallazgos) | 12 | 9 | 2 (H-11, H-12) | 1 (H-10) |
+| P-NN (perímetro) | 13 | 9 cumplen o no aplican | 2 (P-11, P-13) | 1 (P-12) |
 | S-NN (proceso) | 8 | 4 falsos positivos | 2 (S-04, S-06) | 2 (S-03, S-07) |
 
 *Nota.* Elaborada a partir de `docs/05-operaciones/tratamiento-riesgo.md` §3. P-09 se contabiliza dentro de H-08.
 
-El heatmap pasa de 11 críticos, 13 altos y 4 medios a cero críticos, cero altos, 14 medios y 14 bajos con los controles probados al 26 de noviembre. Siete de esos medios bajan a bajo cuando se cierren sus controles pendientes: red `default`, scraping, TLS/HSTS, Access, alertas, restore de backups y branch protection con gate de WPScan. Los otros siete quedan como residual tolerable ≤ 9.
+El heatmap pasa de 11 críticos, 13 altos y 4 medios a cero críticos, cero altos, 12 medios y 16 bajos con los controles probados al 27 de noviembre. Cinco de esos medios bajan a bajo cuando se cierren sus controles pendientes: red `default`, scraping, alertas, restore de backups y branch protection con gate de WPScan. Los otros siete quedan como residual tolerable ≤ 9. TLS/HSTS y el Access del panel bajaron a bajo el 27 de noviembre.
 
 **Figura 3.** Superficie de ataque por zonas de confianza
 
@@ -505,7 +505,7 @@ El heatmap pasa de 11 críticos, 13 altos y 4 medios a cero críticos, cero alto
 
 ![Heatmap de riesgos: inicial, residual actual y objetivo](figuras/figura-4-heatmap.png){width=15.5cm}
 
-*Nota.* Elaborada con los conteos por zona de `docs/05-operaciones/heatmap.md` §5: inicial 11/13/4/0, residual actual 0/0/14/14 y objetivo 0/0/7/21 sobre 28 riesgos.
+*Nota.* Elaborada con los conteos por zona de `docs/05-operaciones/heatmap.md` §5: inicial 11/13/4/0, residual actual 0/0/12/16 y objetivo 0/0/7/21 sobre 28 riesgos.
 
 ---
 
@@ -517,8 +517,8 @@ El heatmap pasa de 11 críticos, 13 altos y 4 medios a cero críticos, cero alto
 
 1. **El sistema resistió la evaluación ofensiva ejecutada.** Dieciséis controles de caja negra y catorce de caja gris quedaron confirmados; no hubo IDOR, XSS almacenado, SQLi, CSRF, upload ejecutable ni manipulación de precio. Los casos de abuso de negocio quedaron cinco bloqueados y tres parciales, ninguno explotado.
 2. **La seguridad del CMS dependió de configuración, no de parches.** Con WordPress y WooCommerce en su última versión, cero CVE que afectaran lo instalado y cero hallazgos de Semgrep en el código propio, el riesgo se movió al borde, a la plataforma y al proceso.
-3. **El borde es la defensa más efectiva y la más incompleta.** WAF, rate limit y Cloud Armor funcionan y están probados; TLS 1.0/1.1, la ausencia de HSTS y la falta de Access en `admin-` son configuración pendiente, no diseño fallido.
-4. **El riesgo residual es aceptable para una demo, no para producción.** Cero riesgos críticos o altos con los controles probados, pero siete riesgos en Medio dependen de controles aún abiertos, lo que impide afirmar que el sistema soportaría pagos reales.
+3. **El borde mejoró donde se configuró y sigue corto donde no hay cuota.** WAF, rate limit, Cloud Armor, TLS 1.2 mínimo, HSTS y Access en el panel están probados; CORS permisivo (H-11) y scraping (H-12) siguen abiertos porque exigen código o una regla que el plan Free no permite.
+4. **El riesgo residual es aceptable para una demo, no para producción.** Cero riesgos críticos o altos con los controles probados, pero cinco riesgos en Medio dependen de controles aún abiertos, lo que impide afirmar que el sistema soportaría pagos reales.
 5. **La evidencia mandó sobre la narrativa.** El informe reabrió P-07 contra el texto del pentest y degradó A06 por el gate de WPScan. Esa disciplina es el principal activo metodológico del trabajo.
 
 ### 6.2 Recomendaciones técnicas
@@ -527,22 +527,21 @@ El heatmap pasa de 11 críticos, 13 altos y 4 medios a cero críticos, cero alto
 
 Prioridad inmediata, antes de cualquier demostración con datos sensibles:
 
-1. Fijar TLS mínimo 1.2 y HSTS `max-age=31536000; includeSubDomains` en Cloudflare (P-07, P-08), con `openssl s_client` como prueba de cierre.
-2. Crear las aplicaciones de Cloudflare Access para `admin-aurorashop` y `staging-aurorashop`, y eliminar el registro DNS huérfano de staging (H-08/P-09, P-10). El modelo de aplicaciones y políticas es el de Cloudflare Zero Trust (Cloudflare, 2024b).
-3. Borrar la red `default` de GCP o cerrar sus reglas 22/3389, y retirar la supresión `CKV2_GCP_18` (P-11, S-06).
-4. Activar branch protection en `main` con PR, una revisión y checks obligatorios (P-13).
+1. Agregar los correos del equipo a la política `Equipo AuroraShop - Allow`; hoy solo el operador puede entrar a `wp-admin`. Crear la aplicación de Access para `staging` cuando exista una réplica sana.
+2. Borrar la red `default` de GCP o cerrar sus reglas 22/3389, y retirar la supresión `CKV2_GCP_18` (P-11, S-06).
+3. Activar branch protection en `main` con PR, una revisión y checks obligatorios (P-13).
+4. Restringir los orígenes permitidos en el REST de WordPress para cerrar H-11, y limitar `/shop/` con `limit_req` de Nginx para H-12; el plan Free no deja una segunda regla de Cloudflare.
 
 Prioridad de proceso:
 
 5. Corregir el gate de WPScan para comparar `fixed_in` con la versión del `Dockerfile` y fallar cuando la corrección sea posterior (S-04).
 6. Probar el disparo real de AL-01 a AL-08 y registrar latencia de detección (A09, R-21).
 7. Restaurar un backup en una instancia temporal y medir el RTO (R-22).
-8. Restringir los orígenes permitidos en el REST de WordPress para cerrar H-11, y limitar `/shop/` con Turnstile o `limit_req` de Nginx para H-12.
 
 Prioridad de endurecimiento:
 
-9. Sustituir `wp-cron.php` por un CronJob y `DISABLE_WP_CRON` (P-12).
-10. Evaluar Binary Authorization y Authenticated Origin Pulls cuando el plan y el balanceador lo permitan; hoy están declarados como no implementados.
+8. Sustituir `wp-cron.php` por un CronJob y `DISABLE_WP_CRON` (P-12).
+9. Evaluar Binary Authorization y Authenticated Origin Pulls cuando el plan y el balanceador lo permitan; hoy están declarados como no implementados.
 
 ### 6.3 Roadmap de seguridad continua
 
@@ -550,7 +549,7 @@ Prioridad de endurecimiento:
 
 | Horizonte | Acción | Métrica de aceptación |
 |---|---|---|
-| 0–30 días | Cerrar P-07, P-08, P-10, P-11, P-13 y H-08; WAF en bloqueo con evidencias; alertas activas | 0 hallazgos críticos o altos abiertos; TLS 1.0/1.1 rechazados; HSTS presente |
+| 0–30 días | Cerrar P-11, P-13, H-11 y H-12; alertas probadas; restore medido; correos del equipo en Access | 0 hallazgos abiertos salvo los aceptados; TLS 1.0/1.1 rechazados; HSTS presente |
 | 30–90 días | ASVS nivel 2, pentest externo, WPScan/DAST por release, rotación de secretos, S-04 corregido | Cobertura ASVS > 80 %; gate de WPScan falla cerrado |
 | 90–180 días | RASP comercial o equivalente, UEBA sobre checkout, DR multi-zona probado, restore medido | MTTR < 1 h; RTO documentado y probado |
 | 180–365 días | PCI-DSS SAQ-A/EP, ISO 27001 del proceso, verificación SOC 2 del proveedor | Auditoría aprobada; brechas residuales ≤ 9 |
@@ -648,3 +647,4 @@ WPScan. (2024). *WPScan WordPress security scanner*. https://github.com/wpscante
 | 0.1 | 2026-11-18 | Esqueleto y asignación de secciones (Opción B) | James |
 | 0.2 | 2026-11-27 | Redacción completa de §1–§6, referencias APA y anexos; logging del LB aplicado y verificado en `staging` | James |
 | 0.3 | 2026-11-27 | Figuras 1–4 exportadas a PNG y embebidas; DOCX y PDF generados en `docs/06-informe/salida/` (Arial 12, 1.5, márgenes 2.54 cm) | James |
+| 0.4 | 2026-11-27 | Cierre verificado de P-07, P-08, P-09/H-08 y P-10; residual 12 medios / 16 bajos; recomendaciones y roadmap actualizados | James |
