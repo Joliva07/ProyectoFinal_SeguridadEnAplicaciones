@@ -16,3 +16,6 @@ spec:
     port: 8080
   securityPolicy:
     name: aurorashop-demo-edge
+  logging:
+    enable: true
+    sampleRate: 1.0
