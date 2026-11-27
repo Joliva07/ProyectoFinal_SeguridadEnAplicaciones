@@ -50,20 +50,25 @@ Toda tabla de herramienta (ZAP, Semgrep, Trivy) cita su documentación oficial e
 
 | # | Contenido | Autor |
 |---|---|---|
-| Tabla 1 | Perfil de seguridad de AuroraShop | Javier |
-| Tabla 2 | Inventario de activos (resumen) | Javier |
-| Tabla 3 | Matriz STRIDE | Javier |
-| Tabla 4 | Scoring DREAD | Javier |
-| Tabla 5 | Matriz de riesgos inicial | Javier |
-| Tabla 6 | Hallazgos caja negra (WPScan/ZAP) | Horacio |
-| Tabla 7 | Hallazgos caja gris y OWASP Web Top 10 | Horacio / Arun |
-| Tabla 8 | Plugins y temas: versión, CVE y decisión | Horacio |
-| Tabla 9 | Resultados SAST/SCA/IaC/contenedores | Josue |
-| Tabla 10 | Tratamiento y residual | Arun |
-| Figura 1 | Arquitectura de seguridad | Josue |
+| Tabla 1 | Perfil de seguridad de AuroraShop (stack, hosts) | James |
+| Tabla 2 | Alcance dentro y fuera | James |
+| Tabla 3 | Inventario de activos (resumen por criticidad) | Javier |
+| Tabla 4 | Amenazas STRIDE priorizadas | Javier |
+| Tabla 5 | Scoring DREAD (extracto) | Javier |
+| Tabla 6 | Matriz de riesgos inicial (resumen) | Javier |
+| Tabla 7 | Hallazgos de caja negra | Horacio |
+| Tabla 8 | OWASP Top 10:2021 verificado | Horacio / Arun |
+| Tabla 9 | Plugins y temas: versión, CVE y decisión | Horacio |
+| Tabla 10 | Resultados SAST/SCA y decisión | Josue / Arun |
+| Tabla 11 | Controles de plataforma y comprobación | Josue |
+| Tabla 12 | Reglas de borde activas | Arun / James |
+| Tabla 13 | Tratamiento y riesgo residual | Arun |
+| Figura 1 | Arquitectura de seguridad (C4) | Josue |
 | Figura 2 | Flujo de checkout con controles | Josue |
-| Figura 3 | Superficie de ataque | Horacio |
-| Figura 4 | Heatmap antes/después | Arun |
+| Figura 3 | Superficie de ataque por zonas | Horacio |
+| Figura 4 | Heatmap antes / residual / objetivo | Arun |
+
+Las figuras 1–4 están en el informe como referencia a su fuente Mermaid y quedan pendientes de exportación a PNG/SVG para la versión Word.
 
 ## 6. Checklist previo a la entrega
 
