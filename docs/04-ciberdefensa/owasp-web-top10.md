@@ -55,7 +55,7 @@ Ningún hallazgo requiere cambios de diseño de la aplicación: los cuatro parci
 
 ## 5. Verificación (Arun, #50)
 
-Verificado el 2026-11-26 contra las evidencias de #45–#48, el triaje SAST/SCA (`docs/03-devsecops/sast-sca.md` §3) y una revisión pasiva del borde (`evidencias/fase3/triaje-sast-sca-2026-11-26.md` §4).
+Verificado el 2026-11-26 contra las evidencias de #45-#48, el triaje SAST/SCA (`docs/03-devsecops/sast-sca.md` sección 3) y una revisión pasiva del borde (`evidencias/fase3/triaje-sast-sca-2026-11-26.md` sección 4).
 
 | Código | Estado de la matriz | Verificación | Ajuste |
 |---|---|---|---|

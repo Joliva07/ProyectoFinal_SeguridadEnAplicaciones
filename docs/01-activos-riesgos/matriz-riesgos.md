@@ -6,7 +6,7 @@ Dueños: **Javier** (v1) → **Arun** (residual) · Capas: las 7 de seguridad en
 
 **Probabilidad:** 1 rara · 2 improbable · 3 posible · 4 probable · 5 casi segura.
 **Impacto:** 1 insignificante · 2 menor · 3 moderado · 4 mayor · 5 catastrófico.
-**Riesgo = P × I.** 1–4 Bajo · 5–9 Medio · 10–14 Alto · 15–25 Crítico.
+**Riesgo = P × I.** 1-4 Bajo · 5-9 Medio · 10-14 Alto · 15-25 Crítico.
 
 Capas: **1** Datos · **2a** Código · **2b** Aplicación · **2c** Implementación · **2d** Perímetro de aplicación · **3** Host · **4** Red interna · **5** Perímetro cloud/red · **6** Física · **7** Políticas y personas.
 

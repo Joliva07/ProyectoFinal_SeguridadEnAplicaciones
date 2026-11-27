@@ -1,6 +1,6 @@
 # Bloqueos de Arun
 
-Registro de lo que **no puede avanzar** en las tareas de Arun (#41, #52, #54, #55, #56) y de qué depende. Complementa a [`plan-de-trabajo.md`](plan-de-trabajo.md) §6.
+Registro de lo que **no puede avanzar** en las tareas de Arun (#41, #52, #54, #55, #56) y de qué depende. Complementa a [`plan-de-trabajo.md`](plan-de-trabajo.md) sección 6.
 
 Cómo se usa:
 
@@ -24,9 +24,9 @@ Estados: **abierto** · **en gestión** (ya se pidió) · **resuelto** · **limi
 | B-07 | Instalar Falco en el clúster | #55 | GKE Autopilot no admite DaemonSets privilegiados salvo las cargas de socios de su allowlist. No se ha confirmado si Falco está admitido en la versión del clúster | Verificarlo (`kubectl get allowlistedv2workloads` o la documentación de *Autopilot partner workloads*). Si no está admitido, pasa a **limitación** y RT-01 se cubre con Q-09/AL-04 | Arun (verifica, requiere B-03) | 2026-11-26 | abierto |
 | B-08 | Variante por usuario de Q-03 (IDOR) y variante por monto de Q-04 (card testing); señales RT-06, RT-07, RT-09 y RT-11 | #41, #55 | El access log de Nginx no trae el usuario ni el query string. Hacen falta eventos `aurora_event` emitidos por la aplicación | Un mu-plugin de eventos. El código del CMS lo mantiene Horacio, así que hay que acordarlo con él antes de tocarlo | Arun escribe, Horacio revisa | 2026-11-26 | abierto |
 | B-09 | Correlacionar con las acciones del WAF de Cloudflare (Q-05) y usar Cloudflare como fuente del SIEM | #54 | El plan Free de Cloudflare no incluye Logpush (`1004 logpush is not enabled for this account`) | No tiene solución sin plan pago. Se compensa con los logs del balanceador y de Cloud Armor (B-05), más Cloudflare Analytics en el dashboard | James (dueño de la zona) | 2026-11-24 | limitación |
-| B-10 | Cerrar la #56 | #56 | El §1 de `tratamiento-riesgo.md` exige que James apruebe los riesgos aceptados (§4): H-10, P-12, S-03, S-07, R-25, R-28 y la cobertura del plan Free | Comentario de aprobación de James en la #56 | James | 2026-11-26 | abierto |
+| B-10 | Cerrar la #56 | #56 | El sección 1 de `tratamiento-riesgo.md` exige que James apruebe los riesgos aceptados (sección 4): H-10, P-12, S-03, S-07, R-25, R-28 y la cobertura del plan Free | Comentario de aprobación de James en la #56 | James | 2026-11-26 | abierto |
 | B-11 | Prueba H-12 (scraping) de las 8 pruebas con `curl` de la #52 | #52 | `/shop/` no tiene límite de tasa. La única regla de rate limit del plan Free ya se usa en el login | Turnstile o Bot Fight Mode en Cloudflare, o `limit_req` de Nginx para `/shop/` | James / Horacio | 2026-11-26 | abierto |
-| B-12 | Bajar R-22 (backups sin restauración probada) en el heatmap | #56 | La restauración de un backup de Cloud SQL no está en el plan de nadie. `matriz-riesgos.md` §4 la deja a nombre de Arun, pero Arun no tiene permisos de Cloud SQL | Que el grupo decida quién la ejecuta (Javier o Josue tienen acceso). Si nadie la hace, queda declarada como pendiente | Grupo | 2026-11-26 | abierto |
+| B-12 | Bajar R-22 (backups sin restauración probada) en el heatmap | #56 | La restauración de un backup de Cloud SQL no está en el plan de nadie. `matriz-riesgos.md` sección 4 la deja a nombre de Arun, pero Arun no tiene permisos de Cloud SQL | Que el grupo decida quién la ejecuta (Javier o Josue tienen acceso). Si nadie la hace, queda declarada como pendiente | Grupo | 2026-11-26 | abierto |
 
 ## 2. Qué desbloquea cada cosa
 
@@ -50,7 +50,7 @@ Texto listo para la issue o el grupo:
 
 Comentario listo para la #56:
 
-> @Ancordss, según el §1 de `docs/05-operaciones/tratamiento-riesgo.md`, aceptar un riesgo requiere tu aprobación y una fecha de revisión. Para cerrar esta issue necesito que apruebes (o rechaces) los 7 riesgos aceptados del §4:
+> @Ancordss, según la sección 1 de `docs/05-operaciones/tratamiento-riesgo.md`, aceptar un riesgo requiere tu aprobación y una fecha de revisión. Para cerrar esta issue necesito que apruebes (o rechaces) los 7 riesgos aceptados de la sección 4:
 >
 > | # | Riesgo / hallazgo | Por qué se acepta | Revisión |
 > |---|---|---|---|
@@ -62,11 +62,11 @@ Comentario listo para la #56:
 > | 6 | **S-03** Cloud SQL con `ENCRYPTED_ONLY` | El pod entra por `cloud-sql-proxy` con mTLS, IP privada e IAM; exigir certificado de cliente no añade protección | 9-dic |
 > | 7 | **S-07** Binary Authorization desactivado | Rompe el bootstrap; se compensa con el deploy por digest (PR #67) y WIF limitado a `main` | 9-dic |
 >
-> Para responder, basta con un comentario aquí: **"Apruebo 1–7"**, o indica cuáles no apruebas y por qué. Lo que no apruebes pasa a "Mitigar" con responsable y plazo.
+> Para responder, basta con un comentario aquí: **"Apruebo 1-7"**, o indica cuáles no apruebas y por qué. Lo que no apruebes pasa a "Mitigar" con responsable y plazo.
 >
-> Aparte, hay cuatro hallazgos abiertos a tu nombre que bajan el residual del heatmap cuando se cierren: **P-07** (TLS mínimo 1.2; hoy el borde acepta 1.0 y 1.1), **P-08** (HSTS), **P-10** (borrar el DNS de `staging-aurorashop`) y **H-08** (Cloudflare Access en `admin-aurorashop`). La prueba de cierre de cada uno está en el §5.
+> Aparte, hay cuatro hallazgos abiertos a tu nombre que bajan el residual del heatmap cuando se cierren: **P-07** (TLS mínimo 1.2; hoy el borde acepta 1.0 y 1.1), **P-08** (HSTS), **P-10** (borrar el DNS de `staging-aurorashop`) y **H-08** (Cloudflare Access en `admin-aurorashop`). La prueba de cierre de cada uno está en la sección 5.
 
-Cuando James responda: pegar el enlace al comentario en la fila B-10, cambiar los "pendiente de aprobación" de `tratamiento-riesgo.md` §2 y §4 por la fecha de la aprobación, y cerrar la #56.
+Cuando James responda: pegar el enlace al comentario en la fila B-10, cambiar los "pendiente de aprobación" de `tratamiento-riesgo.md` sección 2 y sección 4 por la fecha de la aprobación, y cerrar la #56.
 
 ## 5. Historial
 

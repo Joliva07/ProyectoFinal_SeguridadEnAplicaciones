@@ -33,7 +33,7 @@ Los nombres de destino se publican como `wordpress-php` y `wordpress-nginx` en A
 | Egress | NetworkPolicy deny-all con DNS, SQL, restricted APIs y metadata permitidos | conexión de prueba desde pod |
 | Entrada | GKE Ingress protegido por Cloud Armor; origen solo Cloudflare | request desde IP permitida/no permitida |
 | Secretos y medios | CSI de Secret Manager y GCS Fuse, IAM por ambiente | lectura/escritura autorizada |
-| Recursos | requests/limits y HPA 2–6; PDB `minAvailable: 1` | `kubectl get hpa,pdb` |
+| Recursos | requests/limits y HPA 2-6; PDB `minAvailable: 1` | `kubectl get hpa,pdb` |
 
 El ServiceAccount Workload Identity se instala una sola vez desde `infra/k8s/bootstrap/workload-serviceaccounts.yaml`; CI no recibe permiso para editarlo. Secretos TLS de Cloudflare son prerrequisito manual y quedan fuera del repositorio.
 

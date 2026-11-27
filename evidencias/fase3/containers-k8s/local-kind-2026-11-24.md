@@ -29,7 +29,7 @@ kubectl apply -f <render dev>
 | RBAC comodines | `auth can-i --list` | solo `*/api` no-recurso; ningún `*` de recursos |
 | Ingress + TLS | `kubectl create secret tls` + `IngressClass gce` + overlay | Ingress aceptado en `aurorashop` y `staging` |
 | SecretProviderClass | CRD `secrets-store.csi.x-k8s.io/v1` | los 3 objetos aceptados |
-| HPA/PDB | `kubectl get hpa,pdb -n dev` | HPA 2–6, PDB `minAvailable: 1` |
+| HPA/PDB | `kubectl get hpa,pdb -n dev` | HPA 2-6, PDB `minAvailable: 1` |
 
 ## Límites
 

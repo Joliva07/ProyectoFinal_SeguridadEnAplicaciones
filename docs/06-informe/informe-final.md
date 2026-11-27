@@ -237,7 +237,7 @@ La Tabla 6 resume el estado inicial por nivel.
 | Alto (10-14) | 13 | R-03 XSS, R-04 CSRF, R-12 K8s sin red, R-17 origen directo, R-20 admin sin MFA |
 | Medio (5-9) | 4 | R-18 TLS débil, R-27 datos reales en capturas, R-28 un operador de Cloudflare, R-25 proveedor |
 
-*Nota.* Elaborada a partir de `docs/01-activos-riesgos/matriz-riesgos.md` sección 2. La cobertura por capa está verificada en el sección 3 del mismo documento: las diez capas tienen al menos un riesgo y un control.
+*Nota.* Elaborada a partir de `docs/01-activos-riesgos/matriz-riesgos.md` sección 2. La cobertura por capa está verificada en la sección 3 del mismo documento: las diez capas tienen al menos un riesgo y un control.
 
 ---
 

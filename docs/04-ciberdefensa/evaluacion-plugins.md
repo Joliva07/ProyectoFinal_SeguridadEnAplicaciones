@@ -7,8 +7,8 @@ Dueño: **Horacio** · Insumo: `docs/03-devsecops/plugins-temas.md` · Issue #48
 1. Inventario real desde el contenedor PHP de la imagen (`get_plugins()`, `get_mu_plugins()`, `wp_get_themes()`), equivalente a `wp plugin list` / `wp theme list`. La imagen no trae WP-CLI a propósito.
 2. WPScan en el pipeline (`security-ci.yml`, job *SCA · WPScan live inventory*) contra la tienda en vivo, con token API y umbral CVSS ≥ 7 (`.github/scripts/wpscan-threshold.py`).
 3. Correlación con la base pública WPVulnerability (agrega CVE, Wordfence y Patchstack) y con la API de wordpress.org para la última versión publicada.
-4. Revisión de código del plugin propio (`aurora-hardening.php`): Semgrep en CI + lectura dirigida con la lista del §3.
-5. Prueba de explotación: no aplica; ningún CVE afecta a las versiones instaladas (ver §2).
+4. Revisión de código del plugin propio (`aurora-hardening.php`): Semgrep en CI + lectura dirigida con la lista de la sección 3.
+5. Prueba de explotación: no aplica; ningún CVE afecta a las versiones instaladas (ver sección 2).
 6. Decisión por componente: mantener, actualizar, reemplazar o eliminar.
 
 ## 2. Tabla de resultados
@@ -16,11 +16,11 @@ Dueño: **Horacio** · Insumo: `docs/03-devsecops/plugins-temas.md` · Issue #48
 | Plugin / tema | Versión | Última publicada | CVE / hallazgo | CVSS | Alcanzable | Prueba | Decisión | Evidencia |
 |---|---|---|---|---|---|---|---|---|
 | WordPress (núcleo) | 7.1.5 | 7.1.5 | Ninguno registrado para 7.1.5 | — | — | No aplica | Mantener | EV-48-01, EV-48-02 |
-| WooCommerce | 11.3.1 | 11.3.1 | 101 vulnerabilidades históricas (32 CVE), **0 afectan a 11.3.1**. Las más recientes ya corregidas: CVE-2026-125801 (< 11.3.0), CVE-2026-106608 (9.8.0 – < 11.2.0), CVE-2026-48888 (< 11.1.0) | 6.5 / 7.2 / 7.5 (corregidas) | Sí, la Store API (`/wp-json/wc/store/*`) y el checkout son públicos; por eso se exige estar en la última versión | No aplica | Mantener; actualizar por PR al salir una versión nueva | EV-48-01, EV-48-02 |
+| WooCommerce | 11.3.1 | 11.3.1 | 101 vulnerabilidades históricas (32 CVE), **0 afectan a 11.3.1**. Las más recientes ya corregidas: CVE-2026-125801 (< 11.3.0), CVE-2026-106608 (9.8.0 - < 11.2.0), CVE-2026-48888 (< 11.1.0) | 6.5 / 7.2 / 7.5 (corregidas) | Sí, la Store API (`/wp-json/wc/store/*`) y el checkout son públicos; por eso se exige estar en la última versión | No aplica | Mantener; actualizar por PR al salir una versión nueva | EV-48-01, EV-48-02 |
 | Two Factor (must-use) | 0.17.0 | 0.17.0 | 1 histórica: CVE-2026-100508 (< 0.17.0), consumo de recursos sin límite (CWE-770), **ya corregida en 0.17.0** | 5.3 (corregida) | El formulario de 2FA es público tras la contraseña | No aplica | Mantener | EV-48-01, EV-48-02 |
 | Twenty Twenty-Five (tema activo) | 1.5 | 1.5 | Ninguno registrado | — | — | No aplica | Mantener | EV-48-01, EV-48-02 |
-| Tema hijo AuroraShop (`aurora-child`, activo) | 1.0.0 | — | Sin hallazgos: Semgrep `p/php`, `p/owasp-top-ten`, `p/secrets` con 0 resultados en 7 archivos; revisión manual en §3.1 | — | Solo archivos estáticos (CSS, SVG, `theme.json`); su único PHP lo bloquea Nginx (403) | Revisión de código | Mantener | `cms/theme-aurora/`, EV-48-05 |
-| `aurora-hardening.php` (plugin propio, must-use) | repo | — | Sin hallazgos de Semgrep; revisión manual en §3 | — | Sí: login, REST y `?author=` | Pruebas de #44 | Mantener | `evidencias/fase2/hardening-cms-2026-11-25.md` |
+| Tema hijo AuroraShop (`aurora-child`, activo) | 1.0.0 | — | Sin hallazgos: Semgrep `p/php`, `p/owasp-top-ten`, `p/secrets` con 0 resultados en 7 archivos; revisión manual en sección 3.1 | — | Solo archivos estáticos (CSS, SVG, `theme.json`); su único PHP lo bloquea Nginx (403) | Revisión de código | Mantener | `cms/theme-aurora/`, EV-48-05 |
+| `aurora-hardening.php` (plugin propio, must-use) | repo | — | Sin hallazgos de Semgrep; revisión manual en sección 3 | — | Sí: login, REST y `?author=` | Pruebas de #44 | Mantener | `evidencias/fase2/hardening-cms-2026-11-25.md` |
 | Akismet | (imagen oficial) | — | No se usa (sin clave ni formularios de comentarios) | — | — | — | **Eliminado** en el `Dockerfile` | EV-48-03 |
 | Hello Dolly | (imagen oficial) | — | Plugin de ejemplo sin función | — | — | — | **Eliminado** | EV-48-03 |
 | Twenty Twenty-Three y Twenty Twenty-Four | (imagen oficial) | — | Inactivos, pero alcanzables por URL y enumerables | — | Sí (archivos estáticos) | — | **Eliminados** | EV-48-03 |
@@ -81,8 +81,8 @@ Carpeta: `cms/theme-aurora/` (en la imagen, `wp-content/themes/aurora-child/`). 
 
 | ID | Qué es | Dónde |
 |---|---|---|
-| EV-48-01 | Inventario desde el contenedor | `evidencias/fase2/plugins-temas-2026-11-25.md` §1 |
-| EV-48-02 | Correlación de CVE y últimas versiones | `evidencias/fase2/plugins-temas-2026-11-25.md` §2 |
+| EV-48-01 | Inventario desde el contenedor | `evidencias/fase2/plugins-temas-2026-11-25.md` sección 1 |
+| EV-48-02 | Correlación de CVE y últimas versiones | `evidencias/fase2/plugins-temas-2026-11-25.md` sección 2 |
 | EV-48-03 | Eliminación en la imagen | `cms/docker/Dockerfile`, etapa `app` |
 | EV-48-04 | WPScan del pipeline (umbral CVSS ≥ 7 superado) | Run `45750237868` de `security-ci.yml`, artefacto del job WPScan |
-| EV-48-05 | Revisión del tema hijo (Semgrep, Nginx 403 al PHP, sin recursos externos) | `evidencias/fase2/plugins-temas-2026-11-25.md` §4 |
+| EV-48-05 | Revisión del tema hijo (Semgrep, Nginx 403 al PHP, sin recursos externos) | `evidencias/fase2/plugins-temas-2026-11-25.md` sección 4 |

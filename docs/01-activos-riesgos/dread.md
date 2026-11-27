@@ -2,9 +2,9 @@
 
 Dueño: **Javier** · Insumo: `stride.md` · Salida: severidad inicial para `matriz-riesgos.md`
 
-## 1. Escala (1–10)
+## 1. Escala (1-10)
 
-| Dimensión | 1–3 | 4–6 | 7–10 |
+| Dimensión | 1-3 | 4-6 | 7-10 |
 |---|---|---|---|
 | **D** Damage | Cosmético o interno | Pérdida limitada | Financiero, legal o total |
 | **R** Reproducibility | Condiciones raras | Repetible con esfuerzo | Siempre, con un clic |
@@ -16,10 +16,10 @@ Dueño: **Javier** · Insumo: `stride.md` · Salida: severidad inicial para `mat
 
 | Rango | Severidad | Tratamiento esperado |
 |---|---|---|
-| 8.0–10 | Crítica | Mitigar antes de exponer; bloquea release |
-| 6.0–7.9 | Alta | Mitigar en el sprint; compensatorio mientras |
-| 4.0–5.9 | Media | Planificar y monitorear |
-| 1.0–3.9 | Baja | Aceptar y documentar |
+| 8.0-10 | Crítica | Mitigar antes de exponer; bloquea release |
+| 6.0-7.9 | Alta | Mitigar en el sprint; compensatorio mientras |
+| 4.0-5.9 | Media | Planificar y monitorear |
+| 1.0-3.9 | Baja | Aceptar y documentar |
 
 ## 2. Puntuación
 
@@ -58,4 +58,4 @@ Dueño: **Javier** · Insumo: `stride.md` · Salida: severidad inicial para `mat
 
 ## 4. Re-puntuación
 
-Tras la fase 4 se vuelve a puntuar con los `H-NN` reales y se registra la variación. La tabla final se copia al informe §2.4 y alimenta el heatmap residual.
+Tras la fase 4 se vuelve a puntuar con los `H-NN` reales y se registra la variación. La tabla final se copia al informe sección 2.4 y alimenta el heatmap residual.

@@ -20,7 +20,7 @@ Dueño: **James** · Verificación final antes de generar el PDF
 
 ## 2. Estructura
 
-Portada → Resumen ejecutivo → Índice → 1–6 → Anexos → Referencias. Sin página en blanco, sin "Tabla de contenido" manual (campo automático), sin cambiar el orden de secciones.
+Portada → Resumen ejecutivo → Índice → 1-6 → Anexos → Referencias. Sin página en blanco, sin "Tabla de contenido" manual (campo automático), sin cambiar el orden de secciones.
 
 ## 3. Citas
 
@@ -68,7 +68,7 @@ Toda tabla de herramienta (ZAP, Semgrep, Trivy) cita su documentación oficial e
 | Figura 3 | Superficie de ataque por zonas | Horacio |
 | Figura 4 | Heatmap antes / residual / objetivo | Arun |
 
-Las figuras 1–4 están exportadas en `docs/06-informe/figuras/` (PNG) y embebidas en el informe; su fuente editable es Mermaid.
+Las figuras 1-4 están exportadas en `docs/06-informe/figuras/` (PNG) y embebidas en el informe; su fuente editable es Mermaid.
 
 ## 5.1 APA 7 aplicado en la exportación
 
@@ -85,7 +85,7 @@ La versión Word/PDF se genera desde `informe-final.md` y aplica estas convencio
 | Referencias | Sangría francesa de 1.27 cm, alineación izquierda (no justificada), orden alfabético |
 | Citas | Autor-fecha en el cuerpo; cada entrada de la lista está citada al menos una vez |
 
-Se conservan por requisito de la cátedra: Arial 12, interlineado 1.5, márgenes de 2.54 cm, texto justificado y numeración inferior derecha. APA 7 pediría doble espacio y número en la esquina superior derecha; prevalece la norma UMG, documentada en el §1.
+Se conservan por requisito de la cátedra: Arial 12, interlineado 1.5, márgenes de 2.54 cm, texto justificado y numeración inferior derecha. APA 7 pediría doble espacio y número en la esquina superior derecha; prevalece la norma UMG, documentada en la sección 1.
 
 ## 6. Checklist previo a la entrega
 

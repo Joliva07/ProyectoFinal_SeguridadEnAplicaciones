@@ -2,7 +2,7 @@
 
 Dueño: **Arun** · Coautor: **Javier** · Componentes de rúbrica 1 y 4 · Issue #56 · Corte: 2026-11-27
 
-Insumos: pentest de caja negra (#45) y caja gris (#46), OWASP, abuso y superficie (#47), plugins (#48), triaje SAST/SCA (#50, `docs/03-devsecops/sast-sca.md` §3), una verificación pasiva del borde el 2026-11-26 (`evidencias/fase3/triaje-sast-sca-2026-11-26.md` §4) y el endurecimiento del borde aplicado el 2026-11-27 (`evidencias/fase5/edge-hardening-2026-11-27.md`).
+Insumos: pentest de caja negra (#45) y caja gris (#46), OWASP, abuso y superficie (#47), plugins (#48), triaje SAST/SCA (#50, `docs/03-devsecops/sast-sca.md` sección 3), una verificación pasiva del borde el 2026-11-26 (`evidencias/fase3/triaje-sast-sca-2026-11-26.md` sección 4) y el endurecimiento del borde aplicado el 2026-11-27 (`evidencias/fase5/edge-hardening-2026-11-27.md`).
 
 ## 1. Criterios de decisión
 
@@ -25,7 +25,7 @@ Estados: **cerrado** (control probado, con regresión), **no reproducido** (la h
 | Hallazgo | Riesgo | Descripción | Tipo | Impacto | Decisión | Control | Responsable | Plazo | Estado | Residual |
 |---|---|---|---|---|---|---|---|---|---|---|
 | H-01 | R-01 | Plugin desactualizado con CVE de SQLi | Software | Legal, reputacional | Mitigar | Versiones + SHA-256 fijados, `DISALLOW_FILE_MODS`, WPScan y Trivy en CI | Horacio | — | **No reproducido**: 0 CVE en las versiones instaladas (#48) | 6 |
-| H-02 | R-05 | Pedido ajeno por IDOR en REST | Software | Legal, reputacional | Mitigar | Autorización por objeto de WooCommerce | Horacio | — | **No reproducido**: 403 en `wc/v3/orders/{id}` y sin datos ajenos en `view-order` (#46, pruebas 1–2) | 6 |
+| H-02 | R-05 | Pedido ajeno por IDOR en REST | Software | Legal, reputacional | Mitigar | Autorización por objeto de WooCommerce | Horacio | — | **No reproducido**: 403 en `wc/v3/orders/{id}` y sin datos ajenos en `view-order` (#46, pruebas 1-2) | 6 |
 | H-03 | R-06 | Sin límite en `wp-login` | Seguridad | Operacional | Mitigar | W-02 (rate limit) + Nginx + 2FA + bloqueo | James | — | **No reproducido**: 429 desde el 3.er intento (#45, prueba 6) | 4 |
 | H-04 | R-08 | Upload permite extensión ejecutable | Software | Operacional | Mitigar | `upload_mimes`, Nginx sin PHP en uploads, W-05 | Horacio | — | **No reproducido**: `.php`, `.php.png`, `.phtml` y `.zip` rechazados (#46, prueba 12) | 3 |
 | H-05 | R-09 | `wp-config.php.bak` accesible | Técnico | Legal, financiero | Mitigar | W-04 + Nginx | Josue | — | **No reproducido**: 28 rutas sensibles 403/404 (#45, prueba 9; #47 A05) | 3 |
@@ -37,7 +37,7 @@ Estados: **cerrado** (control probado, con regresión), **no reproducido** (la h
 
 | Hallazgo | Riesgo | Descripción | Tipo | Impacto | Decisión | Control | Responsable | Plazo | Estado | Residual |
 |---|---|---|---|---|---|---|---|---|---|---|
-| H-09 | R-05 | El enlace de descarga funcionaba sin sesión | Software | Legal | Mitigar | `woocommerce_downloads_require_login` forzado en el mu-plugin | Horacio | — | **Cerrado**: anónimo 302 y cliente B 403 (#46 §5) | 6 |
+| H-09 | R-05 | El enlace de descarga funcionaba sin sesión | Software | Legal | Mitigar | `woocommerce_downloads_require_login` forzado en el mu-plugin | Horacio | — | **Cerrado**: anónimo 302 y cliente B 403 (#46 sección 5) | 6 |
 | H-10 | R-04 | Cookies sin `SameSite` explícito | Software | Operacional | Aceptar | `Lax` por defecto en los navegadores + nonce en acciones y Store API | Horacio | revisión 9-dic | **Aceptado** (pendiente de aprobación de James) | 4 |
 | H-11 | R-04 | REST refleja cualquier `Origin` con `credentials: true` | Software | Reputacional | Mitigar | Filtro de orígenes permitidos en el mu-plugin (`rest_pre_serve_request`), o regla de cabecera en Cloudflare | Horacio | 2-dic | **Abierto**: reproducido el 2026-11-26 | 4 |
 | H-12 | R-16 | Catálogo sin límite de tasa (scraping) | Seguridad | Financiero | Mitigar | Turnstile/Bot Fight Mode en `/shop/` y en la Store API; `limit_req` de Nginx para `/shop/` porque la cuota Free de rate limit ya se usa en el login | James / Horacio | 2-dic | **Abierto**: 25 × 200 sin reto (2026-11-26) | ★ 9 → 4 |
@@ -81,7 +81,7 @@ Estados: **cerrado** (control probado, con regresión), **no reproducido** (la h
 | P-NN abiertos o aceptados | 3 | — | 2 (P-11, P-13) | 1 (P-12) |
 | S-NN reales | 4 | — | 2 (S-04, S-06) | 2 (S-03, S-07) |
 
-Los `S-01`, `S-02`, `S-05` y `S-08` son falsos positivos o recomendaciones y no generan tratamiento (ver `sast-sca.md` §3).
+Los `S-01`, `S-02`, `S-05` y `S-08` son falsos positivos o recomendaciones y no generan tratamiento (ver `sast-sca.md` sección 3).
 
 | Impacto de negocio | Riesgos |
 |---|---|
@@ -92,7 +92,7 @@ Los `S-01`, `S-02`, `S-05` y `S-08` son falsos positivos o recomendaciones y no 
 
 ## 4. Riesgos aceptados (justificación)
 
-Todos requieren la aprobación de James (§1) antes del cierre de #56.
+Todos requieren la aprobación de James (sección 1) antes del cierre de #56.
 
 | Riesgo / hallazgo | Motivo | Revisión |
 |---|---|---|

@@ -4,28 +4,28 @@ Dueño: **Arun** con **Javier** · Componentes de rúbrica 1 y 4 · Issue #56 ·
 
 ## 1. Zonas
 
-Probabilidad × Impacto (1–5).
+Probabilidad × Impacto (1-5).
 
 | P × I | Zona | Color |
 |---|---|---|
-| 15–25 | Crítico | rojo |
-| 10–14 | Alto | naranja |
-| 5–9 | Medio | amarillo |
-| 1–4 | Bajo | verde |
+| 15-25 | Crítico | rojo |
+| 10-14 | Alto | naranja |
+| 5-9 | Medio | amarillo |
+| 1-4 | Bajo | verde |
 
 ## 2. Puntos
 
 - **Inicial:** matriz v1 del diseño.
-- **Actual:** residual con los controles **probados** al 2026-11-26. Solo baja si hay evidencia (§6).
-- **Objetivo:** residual esperado cuando se cierren los abiertos de `tratamiento-riesgo.md` §2.
+- **Actual:** residual con los controles **probados** al 2026-11-26. Solo baja si hay evidencia (sección 6).
+- **Objetivo:** residual esperado cuando se cierren los abiertos de `tratamiento-riesgo.md` sección 2.
 
 | ID | Riesgo | P ini | I ini | Score | Zona | P act | I act | Score act | Zona act | Objetivo | Evidencia del residual actual |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | R-01 | Plugin con CVE | 4 | 5 | 20 | Crítico | 2 | 4 | 8 | Medio | 6 | 0 CVE en versiones instaladas (#48); el gate de WPScan no bloquea (S-04) |
-| R-02 | SQLi plugin propio | 3 | 5 | 15 | Crítico | 1 | 3 | 3 | Bajo | 3 | Sin SQL propio; Semgrep 0 (#46 §3); A03 |
+| R-02 | SQLi plugin propio | 3 | 5 | 15 | Crítico | 1 | 3 | 3 | Bajo | 3 | Sin SQL propio; Semgrep 0 (#46 sección 3); A03 |
 | R-03 | XSS almacenado | 4 | 3 | 12 | Alto | 2 | 2 | 4 | Bajo | 4 | `wp_kses` en reseñas (#46, prueba 13); A03 |
 | R-04 | CSRF admin | 3 | 4 | 12 | Alto | 2 | 2 | 4 | Bajo | 4 | Nonce obligatorio (#46, prueba 10); H-10 aceptado; H-11 abierto, mitigado por nonce |
-| R-05 | IDOR pedidos | 4 | 4 | 16 | Crítico | 2 | 3 | 6 | Medio | 6 | #46, pruebas 1–3; H-09 cerrado |
+| R-05 | IDOR pedidos | 4 | 4 | 16 | Crítico | 2 | 3 | 6 | Medio | 6 | #46, pruebas 1-3; H-09 cerrado |
 | R-06 | Fuerza bruta/XML-RPC | 5 | 3 | 15 | Crítico | 2 | 2 | 4 | Bajo | 4 | 429 al 3.er intento; XML-RPC 403; 2FA (#45, #44) |
 | R-07 | Enumeración | 5 | 2 | 10 | Alto | 2 | 2 | 4 | Bajo | 4 | `?author=` 404, `wp/v2/users` 403/401 (#45, prueba 5) |
 | R-08 | Upload PHP | 2 | 5 | 10 | Alto | 1 | 3 | 3 | Bajo | 3 | Ejecutables rechazados (#46, prueba 12) |
@@ -44,7 +44,7 @@ Probabilidad × Impacto (1–5).
 | R-21 | Sin auditoría | 5 | 3 | 15 | Crítico | 3 | 3 | 9 | Medio | 4 | Logs JSON centralizados; alertas sin probar (#54) |
 | R-22 | Backups sin restore | 3 | 4 | 12 | Alto | 2 | 4 | 8 | Medio | 3 | Backups CMEK y PITR; restauración no probada |
 | R-23 | Pipeline sin controles | 4 | 4 | 16 | Crítico | 3 | 3 | 9 | Medio | 4 | 9 jobs en verde; sin *branch protection* (P-13) y gate de WPScan que falla abierto (S-04) |
-| R-24 | Sin Pod Security | 3 | 4 | 12 | Alto | 1 | 2 | 2 | Bajo | 2 | PSA `restricted` probado en GKE (#49, pruebas 5–6) |
+| R-24 | Sin Pod Security | 3 | 4 | 12 | Alto | 1 | 2 | 2 | Bajo | 2 | PSA `restricted` probado en GKE (#49, pruebas 5-6) |
 | R-25 | Proveedor cloud | 1 | 5 | 5 | Medio | 1 | 5 | 5 | Medio | 5 | Transferido (SLA de Google Cloud) |
 | R-26 | Phishing/agencia | 3 | 4 | 12 | Alto | 2 | 3 | 6 | Medio | 6 | 2FA obligatorio; Access pendiente |
 | R-27 | Datos reales en capturas | 3 | 3 | 9 | Medio | 1 | 2 | 2 | Bajo | 2 | Evidencias redactadas (commit `89f2989`) |
@@ -150,4 +150,4 @@ Se declara explícitamente: **no queda riesgo crítico sin control**, y ningún 
 
 1. El residual no mejora sin evidencia de la prueba del control.
 2. Re-puntuar a la baja sin cambio técnico es un error, no una mejora.
-3. La columna "Actual" usa los `H-NN`, `P-NN` y `S-NN` reales al 2026-11-27. La columna "Objetivo" es una proyección y solo pasa a "Actual" con la prueba de cierre de `tratamiento-riesgo.md` §5.
+3. La columna "Actual" usa los `H-NN`, `P-NN` y `S-NN` reales al 2026-11-27. La columna "Objetivo" es una proyección y solo pasa a "Actual" con la prueba de cierre de `tratamiento-riesgo.md` sección 5.
