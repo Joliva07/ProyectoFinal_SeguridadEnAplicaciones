@@ -527,7 +527,7 @@ El heatmap pasa de 11 críticos, 13 altos y 4 medios a cero críticos, cero alto
 
 Prioridad inmediata, antes de cualquier demostración con datos sensibles:
 
-1. Agregar los correos del equipo a la política `Equipo AuroraShop - Allow`; hoy solo el operador puede entrar a `wp-admin`. Crear la aplicación de Access para `staging` cuando exista una réplica sana.
+1. Agregar el correo de Javier a la política `Equipo AuroraShop - Allow`; Horacio, Josue y Arun ya están y reciben PIN de un solo uso. Crear la aplicación de Access para `staging` cuando exista una réplica sana.
 2. Borrar la red `default` de GCP o cerrar sus reglas 22/3389, y retirar la supresión `CKV2_GCP_18` (P-11, S-06).
 3. Activar branch protection en `main` con PR, una revisión y checks obligatorios (P-13).
 4. Restringir los orígenes permitidos en el REST de WordPress para cerrar H-11, y limitar `/shop/` con `limit_req` de Nginx para H-12; el plan Free no deja una segunda regla de Cloudflare.
@@ -647,4 +647,4 @@ WPScan. (2024). *WPScan WordPress security scanner*. https://github.com/wpscante
 | 0.1 | 2026-11-18 | Esqueleto y asignación de secciones (Opción B) | James |
 | 0.2 | 2026-11-27 | Redacción completa de §1–§6, referencias APA y anexos; logging del LB aplicado y verificado en `staging` | James |
 | 0.3 | 2026-11-27 | Figuras 1–4 exportadas a PNG y embebidas; DOCX y PDF generados en `docs/06-informe/salida/` (Arial 12, 1.5, márgenes 2.54 cm) | James |
-| 0.4 | 2026-11-27 | Cierre verificado de P-07, P-08, P-09/H-08 y P-10; residual 12 medios / 16 bajos; recomendaciones y roadmap actualizados | James |
+| 0.4 | 2026-11-27 | Cierre verificado de P-07, P-08, P-09/H-08 y P-10; política Access con cinco correos; residual 12 medios / 16 bajos; recomendaciones y roadmap actualizados | James |

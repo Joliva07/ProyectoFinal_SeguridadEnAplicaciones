@@ -23,11 +23,11 @@ HSTS se configuró **sin** `includeSubDomains` por decisión del operador: la zo
 | Aplicación | `admin-aurorashop` (self-hosted, public DNS) |
 | Destino | `admin-aurorashop.ancordss.me.uk` |
 | Política | `Equipo AuroraShop - Allow`, acción Allow |
-| Regla | Emails: `maradiaga.l.james@gmail.com`, `hmaradiagal@miumg.edu.gt` (OR) |
+| Regla | Emails: `maradiaga.l.james@gmail.com`, `hmaradiagal@miumg.edu.gt`, `jolivab07@gmail.com`, `lopezjosecbsl@gmail.com`, `arun.solis@databuddies.com` (OR) |
 | Sesión | 8 horas |
 | Proveedor de identidad | el disponible en la organización (`alzentis.cloudflareaccess.com`) |
 
-Pendiente: agregar los correos de Horacio, Josue, Javier y Arun a la misma política cuando se confirmen; hoy solo el operador puede entrar a `wp-admin`.
+Pendiente: agregar el correo de Javier, que no figura en el historial del repositorio. Horacio, Josue y Arun ya están en la política; reciben un PIN de un solo uso al entrar a `admin-aurorashop`.
 
 ## 3. Verificación (2026-11-27, 15:5x GMT-6)
 
