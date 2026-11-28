@@ -1,4 +1,4 @@
-<!-- Enlace público del diseño en Canva: https://canva.link/zndpx8rf8jmnwq3 -->
+<!-- Enlace público del diseño en Canva: https://canva.link/kiqszykvx5kqv44 -->
 
 ---
 title: "AuroraShop"
