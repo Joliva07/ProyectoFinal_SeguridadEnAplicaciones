@@ -1,3 +1,5 @@
+<!-- Enlace público del diseño en Canva: https://canva.link/zndpx8rf8jmnwq3 -->
+
 ---
 title: "AuroraShop"
 subtitle: "Seguridad continua en un e-commerce WordPress/WooCommerce sobre Google Cloud. Equipo: Hector James Maradiaga López, Javier Oliva, Josue, Horacio, Arun"
